@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/logic/controllers/pdf_library_controller.dart';
 import 'package:pdf_reader/ui/screens/pdf_viewer_screen.dart';
-import 'package:path/path.dart' as path;
+import 'package:pdf_reader/widgets/pdf_list_tab.dart';
+import 'package:pdf_reader/data/models/pdf_file_model.dart';
 import 'package:provider/provider.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -15,8 +16,6 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _pdfFiles = [];
-  List<String> _filteredFiles = [];
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
 
@@ -37,6 +36,16 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   //to open pdfs
+  void _openPdf(BuildContext context, PdfFileModel file) {
+    context.read<PdfLibraryController>().markOpened(file);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            PdfViewerScreen(pdfPath: file.path, pdfName: file.name),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +64,7 @@ class _HomeScreenState extends State<HomeScreen>
                     style: const TextStyle(color: AppColors.primaryText),
                     cursorColor: AppColors.pdfIconColor,
                     decoration: const InputDecoration(
-                      hintText: "Search PDFs...",
+                      hintText: "Search PDFs",
                       hintStyle: TextStyle(color: AppColors.secondaryText),
                       border: InputBorder.none,
                     ),
@@ -69,55 +78,64 @@ class _HomeScreenState extends State<HomeScreen>
                 onPressed: () {
                   setState(() {
                     _isSearching = !_isSearching;
-                    _filteredFiles = _pdfFiles;
+                    if (!_isSearching) {
+                      _searchController.clear();
+                      controller.search("");
+                    }
                   });
                 },
               ),
             ],
+            bottom: TabBar(
+              controller: _tabController,
+              indicatorColor: AppColors.tabIndicator,
+              indicatorWeight: 2.5,
+              labelColor: AppColors.tabLabelActive,
+              unselectedLabelColor: AppColors.tabLabelInactive,
+              labelStyle: AppTextStyles.tabLabel,
+              unselectedLabelStyle: AppTextStyles.tabLabel,
+              tabs: const [
+                Tab(text: 'On Device'),
+                Tab(text: 'Recent'),
+                Tab(text: 'Favorites'),
+              ],
+            ),
           ),
-          body: _filteredFiles.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  itemCount: _filteredFiles.length,
-                  itemBuilder: (context, index) {
-                    String filePath = _filteredFiles[index];
-                    String fileName = path.basename(filePath);
-                    return Card(
-                      color: Colors.white,
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        title: Text(
-                          fileName,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        leading: const Icon(
-                          Icons.picture_as_pdf,
-                          color: Colors.red,
-                          size: 30,
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PdfViewerScreen(
-                                pdfName: fileName,
-                                pdfPath: filePath,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
+          body: TabBarView(
+            controller: _tabController,
+            children: [
+              // On Device Tab
+              PdfListTab(
+                files: controller.allFiles,
+                isLoading: controller.isLoading,
+                emptyMessage: "No PDFs found on device",
+                onFileTap: (file) => _openPdf(context, file),
+                onToggleFavorite: controller.toggleFavorite,
+                onDelete: controller.deleteFile,
+                onShare: controller.shareFile,
+              ),
+              // Recent Tab
+              PdfListTab(
+                files: controller.recentFiles,
+                isLoading: controller.isLoading,
+                emptyMessage: "No recently opened PDFs",
+                onFileTap: (file) => _openPdf(context, file),
+                onToggleFavorite: controller.toggleFavorite,
+                onDelete: controller.deleteFile,
+                onShare: controller.shareFile,
+              ),
+              // Favorites Tab
+              PdfListTab(
+                files: controller.favouriteFiles,
+                isLoading: controller.isLoading,
+                emptyMessage: "No Starred PDFs yet",
+                onFileTap: (file) => _openPdf(context, file),
+                onToggleFavorite: controller.toggleFavorite,
+                onDelete: controller.deleteFile,
+                onShare: controller.shareFile,
+              ),
+            ],
+          ),
         );
       },
     );
