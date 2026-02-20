@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 
 class PdfOptionsModal extends StatelessWidget {
@@ -19,6 +20,30 @@ class PdfOptionsModal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Placeholder();
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.modalBackground,
+        borderRadius: .vertical(top: .circular(AppDimensions.modalTopRadius)),
+      ),
+      child: Column(
+        mainAxisSize: .min,
+        children: [
+          // Handle Bar
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const .only(top: 12, bottom: 8),
+              decoration: BoxDecoration(
+                color: AppColors.dividerColor,
+                borderRadius: .circular(2),
+              ),
+            ),
+          ),
+
+          // File Header Info Section
+        ],
+      ),
+    );
   }
 }
