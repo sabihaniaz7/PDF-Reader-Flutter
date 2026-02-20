@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 import 'package:pdf_reader/data/repositories/pdf_repository.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PdfLibraryController extends ChangeNotifier {
   final PdfRepository _repository = PdfRepository();
@@ -50,5 +51,31 @@ class PdfLibraryController extends ChangeNotifier {
           )
           .toList();
     }
+  }
+
+  void toggleFavorite(PdfFileModel file) {
+    file.isFavorite = !file.isFavorite;
+    notifyListeners();
+  }
+
+  void markOpened(PdfFileModel file) {
+    file.lastOpened = DateTime.now();
+    notifyListeners();
+  }
+
+  Future<bool> deleteFile(PdfFileModel file) async {
+    final success = await _repository.deleteFile(file.path);
+    if (success) {
+      _allFiles.remove(file);
+      _applySearch();
+      notifyListeners();
+    }
+    return success;
+  }
+
+  Future<void> shareFile(PdfFileModel file) async {
+    await SharePlus.instance.share(
+      ShareParams(files: [XFile(file.path)], text: file.name),
+    );
   }
 }
