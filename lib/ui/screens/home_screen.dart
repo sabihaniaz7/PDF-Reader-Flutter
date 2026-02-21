@@ -25,7 +25,8 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<PdfLibraryController>().loadPdfs();
+      // init() checks storage first — scans only on very first launch
+      context.read<PdfLibraryController>().init(context: context);
     });
   }
 
@@ -81,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen>
                   padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text("Sort by", style: AppTextStyles.modalTitle),
+                    child: Text("Sort By", style: AppTextStyles.modalTitle),
                   ),
                 ),
                 Divider(color: AppColors.dividerColor, height: 1),
@@ -161,7 +162,7 @@ class _HomeScreenState extends State<HomeScreen>
                 icon: Icon(
                   _isSearching ? Icons.close_rounded : Icons.search_rounded,
                 ),
-                iconSize: 30,
+                iconSize: 26,
                 color: AppColors.primaryText,
                 onPressed: () {
                   setState(() {
@@ -182,6 +183,25 @@ class _HomeScreenState extends State<HomeScreen>
                 ),
                 onPressed: () => _showSortSheet(context, controller),
               ),
+              // Refresh - manually rescan device for new PDFs
+              IconButton(
+                tooltip: 'Refresh',
+                icon: controller.isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: AppColors.primaryText,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.refresh_rounded,
+                        color: AppColors.primaryText,
+                        size: 26,
+                      ),
+                onPressed: () => controller.refreshPdfs(context: context),
+              ),
             ],
             bottom: TabBar(
               controller: _tabController,
@@ -198,43 +218,68 @@ class _HomeScreenState extends State<HomeScreen>
               ],
             ),
           ),
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              // On Device Tab
-              PdfListTab(
-                files: controller.allFiles,
-                isLoading: controller.isLoading,
-                emptyMessage: "No PDFs found on device",
-                onFileTap: (file) => _openPdf(context, file),
-                onToggleFavorite: controller.toggleFavorite,
-                onDelete: controller.deleteFile,
-                onShare: controller.shareFile,
-              ),
-              // Recent Tab
-              PdfListTab(
-                files: controller.recentFiles,
-                isLoading: controller.isLoading,
-                emptyMessage: "No recently opened PDFs",
-                onFileTap: (file) => _openPdf(context, file),
-                onToggleFavorite: controller.toggleFavorite,
-                onDelete: controller.deleteFile,
-                onShare: controller.shareFile,
-              ),
-              // Favorites Tab
-              PdfListTab(
-                files: controller.favouriteFiles,
-                isLoading: controller.isLoading,
-                emptyMessage: "No Starred PDFs yet",
-                onFileTap: (file) => _openPdf(context, file),
-                onToggleFavorite: controller.toggleFavorite,
-                onDelete: controller.deleteFile,
-                onShare: controller.shareFile,
-              ),
-            ],
-          ),
+          body: controller.isLoading
+              ? const _FirstLaunchLoader()
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // On Device Tab
+                    PdfListTab(
+                      files: controller.allFiles,
+                      isLoading: controller.isLoading,
+                      emptyMessage: "No PDFs found on device",
+                      onFileTap: (file) => _openPdf(context, file),
+                      onToggleFavorite: controller.toggleFavorite,
+                      onDelete: controller.deleteFile,
+                      onShare: controller.shareFile,
+                    ),
+                    // Recent Tab
+                    PdfListTab(
+                      files: controller.recentFiles,
+                      isLoading: controller.isLoading,
+                      emptyMessage: "No recently opened PDFs",
+                      onFileTap: (file) => _openPdf(context, file),
+                      onToggleFavorite: controller.toggleFavorite,
+                      onDelete: controller.deleteFile,
+                      onShare: controller.shareFile,
+                    ),
+                    // Favorites Tab
+                    PdfListTab(
+                      files: controller.favouriteFiles,
+                      isLoading: controller.isLoading,
+                      emptyMessage: "No Starred PDFs yet",
+                      onFileTap: (file) => _openPdf(context, file),
+                      onToggleFavorite: controller.toggleFavorite,
+                      onDelete: controller.deleteFile,
+                      onShare: controller.shareFile,
+                    ),
+                  ],
+                ),
         );
       },
+    );
+  }
+} // ── First-launch loading screen ───────────────────────────────────────────────
+
+class _FirstLaunchLoader extends StatelessWidget {
+  const _FirstLaunchLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(color: AppColors.pdfIconColor),
+          SizedBox(height: 20),
+          Text("Scanning for PDFs...", style: AppTextStyles.emptyStateText),
+          SizedBox(height: 6),
+          Text(
+            "This may take a few seconds on first launch",
+            style: TextStyle(color: AppColors.secondaryText, fontSize: 12),
+          ),
+        ],
+      ),
     );
   }
 }

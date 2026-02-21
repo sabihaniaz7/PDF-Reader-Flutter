@@ -47,7 +47,7 @@ class PdfListTab extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text("Delete PDF", style: AppTextStyles.modalTitle),
         content: Text(
-          'Are you sure you want to delete "${file.name}"? This cannot be undone.',
+          'Delete "${file.name}"? This cannot be undone.',
           style: AppTextStyles.modalSubtitle,
         ),
         actions: [
@@ -64,33 +64,20 @@ class PdfListTab extends StatelessWidget {
               try {
                 final success = await onDelete(file);
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        success
-                            ? '"${file.name}" deleted successfully'
-                            : 'Failed to delete "${file.name}"',
-                      ),
-                      backgroundColor: success
-                          ? AppColors.snackbarDelete
-                          : AppColors.deleteColor,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 3),
-                      action: SnackBarAction(
-                        label: 'OK',
-                        textColor: AppColors.primaryText,
-                        onPressed: () {},
-                      ),
-                    ),
+                  showAppSnackBar(
+                    context,
+                    success
+                        ? '"${file.name}" deleted.'
+                        : 'Could not delete "${file.name}". Please try again.',
+                    actionLabel: 'OK',
                   );
                 }
-              } catch (e) {
+              } catch (_) {
                 if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Error deleting file: $e'),
-                      backgroundColor: AppColors.deleteColor,
-                    ),
+                  showAppSnackBar(
+                    context,
+                    'Something went wrong while deleting.',
+                    actionLabel: 'OK',
                   );
                 }
               }
@@ -111,17 +98,19 @@ class PdfListTab extends StatelessWidget {
       builder: (_) => AlertDialog(
         backgroundColor: AppColors.cardBackground,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text("Delete PDF", style: AppTextStyles.modalTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _InfoRow(label: "Name", value: file.name),
-            _InfoRow(label: "Size", value: file.size),
-            _InfoRow(label: "Modified", value: file.lastModified),
-            _InfoRow(label: "Created", value: file.createdDate),
-            _InfoRow(label: "Path", value: file.path),
-          ],
+        title: const Text("File Info", style: AppTextStyles.modalTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _InfoRow(label: "Name", value: file.name),
+              _InfoRow(label: "Size", value: file.size),
+              _InfoRow(label: "Modified", value: file.lastModified),
+              _InfoRow(label: "Created", value: file.createdDate),
+              _InfoRow(label: "Path", value: file.path),
+            ],
+          ),
         ),
         actions: [
           TextButton(
