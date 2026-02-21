@@ -37,7 +37,9 @@ dependencies:
   provider: ^6.1.5+1 # Provider
   share_plus: ^12.0.1 # Share
   # Open PDF from file manager (intent handling)
-  receive_sharing_intent: ^1.8.1
+  receive_sharing_intent: ^1.8.0
+  # Local storage — persists PDF list, favourites, recents across app restarts
+  shared_preferences: ^2.5.4
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8

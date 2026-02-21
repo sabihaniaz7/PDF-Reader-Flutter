@@ -31,9 +31,15 @@ class AppColors {
   static const Color infoColor = Color(0xFF66BB6A);
   static const Color sortColor = Color(0xFFAB47BC);
 
-  // Snackbar
-  static const Color snackbarDelete = Color(0xFFB71C1C);
-  static const Color snackbarSuccess = Color(0xFF1B5E20);
+  // Snackbar — neutral tones that suit dark background
+  // Use dark grey background with white text (no red/green)
+  static const Color snackbarBackground = Color(0xFF323232);
+  static const Color snackbarText = Color(0xFFFFFFFF);
+  static const Color snackbarActionText = Color(0xFFE53935);
+
+  // Night mode toggle icon colors
+  static const Color nightModeOn = Color(0xFF90CAF9); // light blue — moon
+  static const Color nightModeOff = Color(0xFFFFF176); // yellow — sun
 }
 
 //
@@ -114,4 +120,35 @@ class AppDimensions {
   static const double pageIndicatorPaddingH = 16.0;
   static const double pageIndicatorPaddingV = 8.0;
   static const double pageIndicatorBorderRadius = 20.0;
+}
+
+// Global snackbar helper — neutral dark grey
+/// Call from anywhere that has a BuildContext
+void showAppSnackBar(
+  BuildContext context,
+  String message, {
+  String? actionLabel,
+  VoidCallback? onAction,
+  Duration duration = const Duration(seconds: 3),
+}) {
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        message,
+        style: const TextStyle(color: AppColors.snackbarText, fontSize: 14),
+      ),
+      backgroundColor: AppColors.snackbarBackground,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      duration: duration,
+      action: actionLabel != null
+          ? SnackBarAction(
+              label: actionLabel,
+              textColor: AppColors.snackbarActionText,
+              onPressed: onAction ?? () {},
+            )
+          : null,
+    ),
+  );
 }
