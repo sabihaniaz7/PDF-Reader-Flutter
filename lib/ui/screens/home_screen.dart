@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pdf_reader/core/app_theme.dart';
+import 'package:pdf_reader/data/models/sort_option.dart';
 import 'package:pdf_reader/logic/controllers/pdf_library_controller.dart';
 import 'package:pdf_reader/ui/screens/pdf_viewer_screen.dart';
 import 'package:pdf_reader/widgets/pdf_list_tab.dart';
@@ -47,6 +48,89 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
+  void _showSortSheet(BuildContext context, PdfLibraryController controller) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.modalBackground,
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppDimensions.modalTopRadius),
+            ),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 12, bottom: 8),
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.dividerColor,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20, horizontal: 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text("Sort by", style: AppTextStyles.modalTitle),
+                  ),
+                ),
+                Divider(color: AppColors.dividerColor, height: 1),
+                ...SortOption.values.map((option) {
+                  final isSelected = controller.sortOption == option;
+                  return InkWell(
+                    onTap: () {
+                      controller.setSortOption(option);
+                      Navigator.pop(context);
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 20,
+                        horizontal: 14,
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isSelected
+                                ? Icons.radio_button_checked_rounded
+                                : Icons.radio_button_off_rounded,
+                            color: isSelected
+                                ? AppColors.pdfIconColor
+                                : AppColors.secondaryText,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 14),
+                          Text(
+                            option.label,
+                            style: AppTextStyles.modalActionLabel.copyWith(
+                              color: isSelected
+                                  ? AppColors.primaryText
+                                  : AppColors.accentText,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+                const SizedBox(height: 16),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PdfLibraryController>(
@@ -72,9 +156,13 @@ class _HomeScreenState extends State<HomeScreen>
                   )
                 : const Text("PDF Reader", style: AppTextStyles.appBarTitle),
             actions: [
+              //search icon
               IconButton(
-                icon: Icon(_isSearching ? Icons.cancel : Icons.search_outlined),
+                icon: Icon(
+                  _isSearching ? Icons.close_rounded : Icons.search_rounded,
+                ),
                 iconSize: 30,
+                color: AppColors.primaryText,
                 onPressed: () {
                   setState(() {
                     _isSearching = !_isSearching;
@@ -84,6 +172,15 @@ class _HomeScreenState extends State<HomeScreen>
                     }
                   });
                 },
+              ),
+              // Sort Button
+              IconButton(
+                icon: const Icon(
+                  Icons.sort_rounded,
+                  color: AppColors.primaryText,
+                  size: 26,
+                ),
+                onPressed: () => _showSortSheet(context, controller),
               ),
             ],
             bottom: TabBar(

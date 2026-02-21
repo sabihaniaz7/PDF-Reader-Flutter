@@ -10,6 +10,8 @@ class AppColors {
   static const Color tabBarBackground = Color(0xFF121212);
   static const Color dividerColor = Color(0xFF2C2C2C);
   static const Color bottomNavBackground = Color(0xFF1A1A1A);
+  static const Color pageIndicatorBackground = Color(0xCC000000);
+  static const Color searchBarBackground = Color(0xFF2A2A2A);
   // Text Colors
   static const Color primaryText = Color(0xFFFFFFFF);
   static const Color secondaryText = Color(0xFF9E9E9E);
@@ -27,6 +29,11 @@ class AppColors {
   static const Color shareColor = Color(0xFF42A5F5);
   static const Color deleteColor = Color(0xFFEF5350);
   static const Color infoColor = Color(0xFF66BB6A);
+  static const Color sortColor = Color(0xFFAB47BC);
+
+  // Snackbar
+  static const Color snackbarDelete = Color(0xFFB71C1C);
+  static const Color snackbarSuccess = Color(0xFF1B5E20);
 }
 
 //
@@ -80,6 +87,16 @@ class AppTextStyles {
     color: AppColors.secondaryText,
     fontSize: 15,
   );
+  static const TextStyle pageIndicator = TextStyle(
+    color: AppColors.primaryText,
+    fontSize: 13,
+    fontWeight: FontWeight.w600,
+  );
+
+  static const TextStyle searchHint = TextStyle(
+    color: AppColors.secondaryText,
+    fontSize: 14,
+  );
 }
 
 class AppDimensions {
@@ -93,6 +110,8 @@ class AppDimensions {
   static const double modalTopRadius = 20.0;
   static const double modalPaddingH = 20.0;
   static const double modalPaddingV = 16.0;
-
   static const double pdfIconSize = 26.0;
+  static const double pageIndicatorPaddingH = 16.0;
+  static const double pageIndicatorPaddingV = 8.0;
+  static const double pageIndicatorBorderRadius = 20.0;
 }
