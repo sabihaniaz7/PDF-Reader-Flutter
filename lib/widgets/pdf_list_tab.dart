@@ -47,7 +47,7 @@ class PdfListTab extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: const Text("Delete PDF", style: AppTextStyles.modalTitle),
         content: Text(
-          "Are you sure you want to delete ${file.name}? This action cannot be undone.",
+          'Are you sure you want to delete "${file.name}"? This cannot be undone.',
           style: AppTextStyles.modalSubtitle,
         ),
         actions: [
@@ -59,9 +59,41 @@ class PdfListTab extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () {
-              onDelete(file);
+            onPressed: () async {
               Navigator.pop(context);
+              try {
+                final success = await onDelete(file);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? '"${file.name}" deleted successfully'
+                            : 'Failed to delete "${file.name}"',
+                      ),
+                      backgroundColor: success
+                          ? AppColors.snackbarDelete
+                          : AppColors.deleteColor,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 3),
+                      action: SnackBarAction(
+                        label: 'OK',
+                        textColor: AppColors.primaryText,
+                        onPressed: () {},
+                      ),
+                    ),
+                  );
+                }
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Error deleting file: $e'),
+                      backgroundColor: AppColors.deleteColor,
+                    ),
+                  );
+                }
+              }
             },
             child: const Text(
               "Delete",
@@ -154,7 +186,6 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(label.toUpperCase(), style: AppTextStyles.sectionHeader),
-
           const SizedBox(height: 2),
           Text(
             value,

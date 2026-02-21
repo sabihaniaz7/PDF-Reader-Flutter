@@ -2,6 +2,57 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+<!-- ── Open PDFs from Files / other apps ─────────────────────────── -->
+<key>CFBundleDocumentTypes</key>
+<array>
+    <dict>
+        <key>CFBundleTypeName</key>
+        <string>PDF Document</string>
+        <key>CFBundleTypeRole</key>
+        <string>Viewer</string>
+        <key>LSHandlerRank</key>
+        <string>Alternate</string>
+        <key>LSItemContentTypes</key>
+        <array>
+            <string>com.adobe.pdf</string>
+        </array>
+    </dict>
+</array>
+
+<!-- ── Declare supported content types (iOS 14+) ─────────────────── -->
+<key>UTImportedTypeDeclarations</key>
+<array>
+    <dict>
+        <key>UTTypeIdentifier</key>
+        <string>com.adobe.pdf</string>
+        <key>UTTypeConformsTo</key>
+        <array>
+            <string>public.data</string>
+            <string>public.composite-content</string>
+        </array>
+        <key>UTTypeDescription</key>
+        <string>PDF Document</string>
+        <key>UTTypeTagSpecification</key>
+        <dict>
+            <key>public.filename-extension</key>
+            <array>
+                <string>pdf</string>
+            </array>
+            <key>public.mime-type</key>
+            <string>application/pdf</string>
+        </dict>
+    </dict>
+</array>
+
+<!-- ── Privacy descriptions (required by Apple) ──────────────────── -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>PDF Library needs access to read PDF files.</string>
+
+<key>NSDocumentsFolderUsageDescription</key>
+<string>PDF Library needs access to your documents to find PDF files.</string>
+
+
+
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
