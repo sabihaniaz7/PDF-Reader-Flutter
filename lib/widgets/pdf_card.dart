@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 
+/// A visual card representing a single PDF file in a list.
+///
+/// Displays the PDF icon, filename, size, and last modification date.
+/// It provides a tap target for opening the file and a 'more' icon for options.
 class PdfCard extends StatelessWidget {
+  /// The PDF file metadata to display.
   final PdfFileModel file;
+
+  /// Callback triggered when the entire card is tapped.
   final VoidCallback onTap;
+
+  /// Callback triggered when the three-dots menu icon is tapped.
   final VoidCallback onThreeDotsTap;
 
   const PdfCard({
@@ -19,27 +28,27 @@ class PdfCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const .symmetric(
+        margin: const EdgeInsets.symmetric(
           horizontal: AppDimensions.cardMarginH,
           vertical: AppDimensions.cardMarginV,
         ),
-        padding: const .all(AppDimensions.cardPadding),
+        padding: const EdgeInsets.all(AppDimensions.cardPadding),
         decoration: BoxDecoration(
           color: AppColors.cardBackground,
-          borderRadius: .circular(AppDimensions.cardBorderRadius),
+          borderRadius: BorderRadius.circular(AppDimensions.cardBorderRadius),
         ),
         child: Row(
           children: [
-            // PDF Icon with red border
+            // ── PDF Icon with stylized container ──────────────────────────
             Container(
               width: AppDimensions.iconContainerSize,
               height: AppDimensions.iconContainerSize,
               decoration: BoxDecoration(
                 color: AppColors.pdfIconBackground,
-                borderRadius: .circular(
+                borderRadius: BorderRadius.circular(
                   AppDimensions.iconContainerBorderRadius,
                 ),
-                border: .all(
+                border: Border.all(
                   color: AppColors.pdfIconBorder,
                   width: AppDimensions.iconContainerBorderWidth,
                 ),
@@ -53,10 +62,11 @@ class PdfCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 14),
-            // File Info
+
+            // ── File Information (Name, Size, Date) ───────────────────────
             Expanded(
               child: Column(
-                crossAxisAlignment: .start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     file.name,
@@ -73,7 +83,8 @@ class PdfCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 8),
-            // Three dots menu
+
+            // ── Options Menu Trigger ──────────────────────────────────────
             GestureDetector(
               onTap: onThreeDotsTap,
               behavior: HitTestBehavior.opaque,

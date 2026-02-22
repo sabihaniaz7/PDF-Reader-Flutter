@@ -5,8 +5,15 @@ import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/logic/controllers/pdf_library_controller.dart';
 import 'package:provider/provider.dart';
 
+/// A dedicated screen for viewing PDF documents.
+///
+/// It utilizes [flutter_pdfview] for native rendering and includes
+/// features like night mode toggling and jump-to-page navigation.
 class PdfViewerScreen extends StatelessWidget {
+  /// The absolute file path of the PDF to display.
   final String pdfPath;
+
+  /// The display name (filename) of the PDF.
   final String pdfName;
 
   const PdfViewerScreen({
@@ -17,6 +24,7 @@ class PdfViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Provide a localized controller for managing the viewer's specific state.
     return ChangeNotifierProvider(
       create: (_) => PdfViewerController(),
       child: _PdfViewerBody(pdfPath: pdfPath, pdfName: pdfName),
@@ -25,6 +33,8 @@ class PdfViewerScreen extends StatelessWidget {
 }
 
 // ----------------------------------------------------------
+
+/// Internal implementation of the PDF viewer UI.
 class _PdfViewerBody extends StatefulWidget {
   final String pdfPath;
   final String pdfName;
@@ -36,7 +46,10 @@ class _PdfViewerBody extends StatefulWidget {
 }
 
 class _PdfViewerBodyState extends State<_PdfViewerBody> {
+  /// Reference to the underlying PDF view controller provided by the package.
   PDFViewController? _pdfController;
+
+  /// Controller for the numeric input field in the 'Jump to Page' dialog.
   final TextEditingController _jumpController = TextEditingController();
 
   @override
@@ -44,8 +57,10 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
     _jumpController.dispose();
     super.dispose();
   }
+
   // ── Jump to page dialog ───────────────────────────────────────────────────
 
+  /// Shows an [AlertDialog] prompting the user to enter a specific page number.
   void _showJumpToPageDialog(BuildContext context, PdfViewerController ctrl) {
     _jumpController.clear();
     showDialog(
@@ -85,6 +100,7 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
               try {
                 final page = int.parse(_jumpController.text.trim());
                 if (page >= 1 && page <= ctrl.totalPages) {
+                  // flutter_pdfview is 0-indexed.
                   _pdfController?.setPage(page - 1);
                   Navigator.pop(context);
                 } else {
@@ -111,19 +127,21 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
   }
 
   // ----------- Build------------------------------
+
   @override
   Widget build(BuildContext context) {
     return Consumer<PdfViewerController>(
       builder: (context, ctrl, _) {
         final isNight = ctrl.isNightMode;
+
+        // Colors for icons/text switch based on night mode to maintain visibility.
         final iconColor = isNight
             ? AppColors.primaryText
             : AppColors.cardBackground;
 
-        // Scaffold background flips with night mode
-        final bgColor = isNight
-            ? AppColors.scaffoldBackground
-            : const Color(0xFFF5F5F5);
+        // Scaffold background adapts to night mode.
+        final bgColor = isNight ? AppColors.scaffoldBackground : Colors.white;
+
         return Scaffold(
           backgroundColor: bgColor,
           appBar: AppBar(
@@ -141,20 +159,19 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
               overflow: TextOverflow.ellipsis,
             ),
             actions: [
-              // Light/ Night Mode toggle
+              // ── Night/Light Mode toggle ─────────────────────────────────
               IconButton(
-                tooltip: ctrl.isNightMode ? 'Light Mode' : 'Night Mode',
+                tooltip: isNight ? 'Light Mode' : 'Night Mode',
                 icon: Icon(
-                  ctrl.isNightMode
-                      ? Icons.nightlight_round
-                      : Icons.wb_sunny_rounded,
-                  color: ctrl.isNightMode
+                  isNight ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+                  color: isNight
                       ? AppColors.nightModeOff
                       : AppColors.nightModeOn,
                 ),
                 onPressed: ctrl.toggleNightMode,
               ),
-              // ── Search bar toggle ───────────────────────────────────────
+
+              // ── Bottom search bar toggle ────────────────────────────────
               IconButton(
                 tooltip: 'Copy Text',
                 icon: Icon(
@@ -166,7 +183,7 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
                 onPressed: ctrl.toggleSearchBar,
               ),
 
-              // ── Jump to page ────────────────────────────────────────────
+              // ── Navigation jump ─────────────────────────────────────────
               IconButton(
                 tooltip: 'Jump to page',
                 icon: Icon(
@@ -179,49 +196,60 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
           ),
           body: Stack(
             children: [
-              // ── PDF View ───────────────────────────────────────────────
-              // swipeHorizontal: false  → vertical scroll (page-by-page)
-              // pageFling: true         → snaps to each full page
-              // autoSpacing: true       → gap between pages
-              // enableSwipe: true       → allows swiping between pages
-              //
-              // flutter_pdfview scrolls vertically when swipeHorizontal=false.
-              // Users swipe up/down to move between pages naturally.
-              PDFView(
-                filePath: widget.pdfPath,
-                enableSwipe: true,
-                swipeHorizontal: false, // ← vertical scrolling
-                autoSpacing: true,
-                pageFling: true, // snap to full page on release
-                pageSnap: true, // snap pages into view
-                fitPolicy: FitPolicy.BOTH,
-                nightMode: isNight,
-                onViewCreated: (c) => _pdfController = c,
-                onRender: (pages) {
-                  try {
-                    ctrl.setTotalPages(pages ?? 0, context: context);
-                  } catch (_) {
-                    showAppSnackBar(context, 'Could not render PDF pages.');
-                  }
-                },
-                onPageChanged: (page, _) {
-                  try {
-                    ctrl.setCurrentPage(page ?? 0, context: context);
-                  } catch (_) {
-                    // Silent — not critical enough to interrupt reading
-                  }
-                },
-                onError: (error) {
-                  showAppSnackBar(
-                    context,
-                    'Could not open this PDF. The file may be corrupted.',
-                  );
-                },
-                onPageError: (page, error) {
-                  showAppSnackBar(context, 'Could not load page $page.');
-                },
+              // ── PDF Rendering Engine ─────────────────────────────────────
+              ColoredBox(
+                color: isNight ? Colors.black : Colors.white,
+                child: PDFView(
+                  // We use a ValueKey(isNight) to force a full widget rebuild
+                  // when theme changes, as the package may not update the view
+                  // color dynamically otherwise.
+                  key: ValueKey<bool>(isNight),
+                  filePath: widget.pdfPath,
+                  // Maintain the user's current page during theme rebuilds.
+                  defaultPage: ctrl.currentPage > 0 ? ctrl.currentPage - 1 : 0,
+                  enableSwipe: true,
+                  swipeHorizontal:
+                      false, // Vertical scrolling for natural reading.
+                  autoSpacing: true,
+                  pageFling: true, // Swipes snap to the next full page.
+                  pageSnap: true,
+                  fitPolicy: FitPolicy.BOTH,
+                  nightMode: isNight,
+                  backgroundColor: isNight
+                      ? AppColors.scaffoldBackground
+                      : Colors.white,
+
+                  onViewCreated: (c) {
+                    _pdfController = c;
+                  },
+                  onRender: (pages) {
+                    try {
+                      // Sync document metadata with our controller.
+                      ctrl.setTotalPages(pages ?? 0, context: context);
+                    } catch (_) {
+                      showAppSnackBar(context, 'Could not render PDF pages.');
+                    }
+                  },
+                  onPageChanged: (page, _) {
+                    try {
+                      ctrl.setCurrentPage(page ?? 0, context: context);
+                    } catch (_) {
+                      // Non-critical update.
+                    }
+                  },
+                  onError: (error) {
+                    showAppSnackBar(
+                      context,
+                      'Could not open this PDF. The file may be corrupted.',
+                    );
+                  },
+                  onPageError: (page, error) {
+                    showAppSnackBar(context, 'Could not load page $page.');
+                  },
+                ),
               ),
-              // ── Page Indicator
+
+              // ── Floating Page Indicator ──────────────────────────────────
               if (ctrl.totalPages > 0)
                 Positioned(
                   top: 12,
@@ -266,12 +294,9 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
                   ),
                 ),
 
-              // ── Search bar — slides up from bottom ────────────────────────
-              // NOTE: This searches within PDF text only if the PDF has embedded
-              // text. flutter_pdfview renders pages as images, so text search
-              // and copy are NOT natively supported in this package.
-              // The bar below lets user type and copy their typed text.
-              // Copy text bar
+              // ── Sliding Search/Copy Bar ──────────────────────────────────
+              // Note: flutter_pdfview renders as images; this bar allows
+              // the user to type and copy text independently.
               AnimatedPositioned(
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeOut,
@@ -289,9 +314,10 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Copy text bar widget —
+// Copy text bar widget
 // ─────────────────────────────────────────────────────────────────────────────
 
+/// A bottom bar widget for typing and copying text.
 class _CopyTextBar extends StatefulWidget {
   final bool isNightMode;
   const _CopyTextBar({required this.isNightMode});
@@ -311,6 +337,7 @@ class _CopyTextBarState extends State<_CopyTextBar> {
 
   @override
   Widget build(BuildContext context) {
+    // Styling adapts to night mode.
     final barBg = widget.isNightMode ? AppColors.cardBackground : Colors.white;
     final fieldBg = widget.isNightMode
         ? AppColors.searchBarBackground
@@ -353,7 +380,7 @@ class _CopyTextBarState extends State<_CopyTextBar> {
                 ),
               ),
             ),
-            // Copy typed text
+            // Button to copy typed content to system clipboard.
             IconButton(
               tooltip: 'Copy to clipboard',
               icon: const Icon(
@@ -385,7 +412,7 @@ class _CopyTextBarState extends State<_CopyTextBar> {
                 }
               },
             ),
-            // Clear
+            // Button to close/clear the bar.
             IconButton(
               tooltip: 'Clear',
               icon: const Icon(
