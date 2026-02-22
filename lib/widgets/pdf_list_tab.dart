@@ -4,10 +4,21 @@ import 'package:pdf_reader/data/models/pdf_file_model.dart';
 import 'package:pdf_reader/widgets/pdf_card.dart';
 import 'package:pdf_reader/widgets/pdf_options_modal.dart';
 
+/// A reusable tab view component that displays a scrollable list of [PdfCard]s.
+///
+/// It includes helper methods for showing file information dialogs,
+/// confirmation dialogs for deletion, and managing the state of the list.
 class PdfListTab extends StatelessWidget {
+  /// The list of PDF files to display in this tab.
   final List<PdfFileModel> files;
+
+  /// Whether a data loading/scanning operation is currently active.
   final bool isLoading;
+
+  /// The message to display if the [files] list is empty.
   final String emptyMessage;
+
+  // Callbacks for file interactions
   final Function(PdfFileModel) onFileTap;
   final Function(PdfFileModel) onToggleFavorite;
   final Function(PdfFileModel) onDelete;
@@ -23,7 +34,8 @@ class PdfListTab extends StatelessWidget {
     required this.onDelete,
     required this.onShare,
   });
-  //
+
+  /// Displays the options modal (bottom sheet) for a specific file.
   void _showOptionsModal(BuildContext context, PdfFileModel file) {
     showModalBottomSheet(
       context: context,
@@ -39,6 +51,7 @@ class PdfListTab extends StatelessWidget {
     );
   }
 
+  /// Displays a confirmation dialog before permanently deleting a file.
   void _confirmDelete(BuildContext context, PdfFileModel file) {
     showDialog(
       context: context,
@@ -92,6 +105,7 @@ class PdfListTab extends StatelessWidget {
     );
   }
 
+  /// Displays a dialog containing detailed metadata about the [file].
   void _showInfoDialog(BuildContext context, PdfFileModel file) {
     showDialog(
       context: context,
@@ -127,15 +141,21 @@ class PdfListTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Show a spinner if the tab segments are explicitly loading.
     if (isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.pdfIconColor),
       );
     }
+
+    // Show an empty state message if no files are found for the current segment.
     if (files.isEmpty) {
       return Center(
         child: Column(
           children: [
+            const SizedBox(
+              height: 100,
+            ), // Push empty state down for better balance.
             Icon(
               Icons.folder_open_rounded,
               size: 64,
@@ -147,8 +167,10 @@ class PdfListTab extends StatelessWidget {
         ),
       );
     }
+
+    // Build the scrollable list of PDF cards.
     return ListView.builder(
-      padding: const .only(top: 8, bottom: 20),
+      padding: const EdgeInsets.only(top: 8, bottom: 20),
       itemCount: files.length,
       itemBuilder: (context, index) {
         final file = files[index];
@@ -162,6 +184,7 @@ class PdfListTab extends StatelessWidget {
   }
 }
 
+/// Internal helper widget to display a labeled metadata row in the Info Dialog.
 class _InfoRow extends StatelessWidget {
   final String label;
   final String value;

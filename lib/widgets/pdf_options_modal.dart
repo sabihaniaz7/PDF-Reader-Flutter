@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 
+/// A modal bottom sheet providing actions for a specific PDF file.
+///
+/// Actions include: Sharing the file, Deleting the file, Viewing metadata info,
+/// and toggling the 'starred' status.
 class PdfOptionsModal extends StatelessWidget {
+  /// The PDF file model this modal acts upon.
   final PdfFileModel file;
+
+  // Callbacks for modal actions
   final VoidCallback onShare;
   final VoidCallback onDelete;
   final VoidCallback onViewInfo;
@@ -23,40 +30,45 @@ class PdfOptionsModal extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: AppColors.modalBackground,
-        borderRadius: .vertical(top: .circular(AppDimensions.modalTopRadius)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppDimensions.modalTopRadius),
+        ),
       ),
       child: Column(
-        mainAxisSize: .min,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Handle Bar
+          // ── Modal Drag Handle ───────────────────────────────────────────
           Center(
             child: Container(
               width: 36,
               height: 4,
-              margin: const .only(top: 12, bottom: 8),
+              margin: const EdgeInsets.only(top: 12, bottom: 8),
               decoration: BoxDecoration(
                 color: AppColors.dividerColor,
-                borderRadius: .circular(2),
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
           ),
 
-          // File Header Info Section
+          // ── File Summary Header ─────────────────────────────────────────
           Padding(
-            padding: const .symmetric(
+            padding: const EdgeInsets.symmetric(
               horizontal: AppDimensions.modalPaddingH,
               vertical: 12,
             ),
             child: Row(
               children: [
-                //
+                // Stylized PDF type icon
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
                     color: AppColors.pdfIconBackground,
-                    borderRadius: .circular(10),
-                    border: .all(color: AppColors.pdfIconBorder, width: 1.5),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.pdfIconBorder,
+                      width: 1.5,
+                    ),
                   ),
                   child: const Center(
                     child: Icon(
@@ -67,10 +79,11 @@ class PdfOptionsModal extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
-                // File Info
+
+                // Truncated filename and size/date summary
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: .start,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         file.name,
@@ -86,7 +99,8 @@ class PdfOptionsModal extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Favourite Star
+
+                // Quick-toggle Star Icon
                 GestureDetector(
                   onTap: () {
                     onToggleFavorite();
@@ -108,7 +122,7 @@ class PdfOptionsModal extends StatelessWidget {
           Divider(color: AppColors.dividerColor, height: 1),
           const SizedBox(height: 8),
 
-          // Action Items
+          // ── Action List Items ───────────────────────────────────────────
           _ModalActionItem(
             icon: Icons.share_rounded,
             iconColor: AppColors.shareColor,
@@ -137,6 +151,7 @@ class PdfOptionsModal extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
+          // Ensure enough spacing for bottom safe areas (e.g., iPhone home indicator).
           SizedBox(height: MediaQuery.of(context).padding.bottom),
         ],
       ),
@@ -144,6 +159,7 @@ class PdfOptionsModal extends StatelessWidget {
   }
 }
 
+/// Internal widget for a single actionable row within the [PdfOptionsModal].
 class _ModalActionItem extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
