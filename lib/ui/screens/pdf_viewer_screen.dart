@@ -51,6 +51,7 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
 
   /// Controller for the numeric input field in the 'Jump to Page' dialog.
   final TextEditingController _jumpController = TextEditingController();
+  double _indicatorTop = 12.0;
 
   @override
   void dispose() {
@@ -63,22 +64,34 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
   /// Shows an [AlertDialog] prompting the user to enter a specific page number.
   void _showJumpToPageDialog(BuildContext context, PdfViewerController ctrl) {
     _jumpController.clear();
+    final isNight = ctrl.isNightMode;
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        backgroundColor: AppColors.cardBackground,
+        backgroundColor: isNight ? AppColors.cardBackground : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: const Text('Go to Page', style: AppTextStyles.modalTitle),
+        title: Text(
+          'Go to Page',
+          style: AppTextStyles.modalTitle.copyWith(
+            color: isNight ? AppColors.primaryText : AppColors.cardBackground,
+          ),
+        ),
         content: TextField(
           controller: _jumpController,
           keyboardType: TextInputType.number,
-          style: const TextStyle(color: AppColors.primaryText),
+          style: TextStyle(
+            color: isNight ? AppColors.primaryText : AppColors.cardBackground,
+          ),
           cursorColor: AppColors.pdfIconColor,
           decoration: InputDecoration(
             hintText: 'page (1 - ${ctrl.totalPages})',
-            hintStyle: AppTextStyles.searchHint,
+            hintStyle: AppTextStyles.searchHint.copyWith(
+              color: AppColors.secondaryText,
+            ),
             enabledBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: AppColors.dividerColor),
+              borderSide: BorderSide(
+                color: isNight ? AppColors.dividerColor : AppColors.accentText,
+              ),
               borderRadius: BorderRadius.circular(8),
             ),
             focusedBorder: OutlineInputBorder(
@@ -90,9 +103,13 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               'Cancel',
-              style: TextStyle(color: AppColors.secondaryText),
+              style: TextStyle(
+                color: isNight
+                    ? AppColors.secondaryText
+                    : AppColors.tabLabelActive,
+              ),
             ),
           ),
           TextButton(
@@ -194,118 +211,143 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
               ),
             ],
           ),
-          body: Stack(
-            children: [
-              // ── PDF Rendering Engine ─────────────────────────────────────
-              ColoredBox(
-                color: isNight ? Colors.black : Colors.white,
-                child: PDFView(
-                  // We use a ValueKey(isNight) to force a full widget rebuild
-                  // when theme changes, as the package may not update the view
-                  // color dynamically otherwise.
-                  key: ValueKey<bool>(isNight),
-                  filePath: widget.pdfPath,
-                  // Maintain the user's current page during theme rebuilds.
-                  defaultPage: ctrl.currentPage > 0 ? ctrl.currentPage - 1 : 0,
-                  enableSwipe: true,
-                  swipeHorizontal:
-                      false, // Vertical scrolling for natural reading.
-                  autoSpacing: true,
-                  pageFling: true, // Swipes snap to the next full page.
-                  pageSnap: true,
-                  fitPolicy: FitPolicy.BOTH,
-                  nightMode: isNight,
-                  backgroundColor: isNight
-                      ? AppColors.scaffoldBackground
-                      : Colors.white,
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              final bodyHeight = constraints.maxHeight;
+              return Stack(
+                children: [
+                  // ── PDF Rendering Engine ─────────────────────────────────────
+                  ColoredBox(
+                    color: isNight
+                        ? AppColors.scaffoldBackground
+                        : AppColors.primaryText,
+                    child: PDFView(
+                      // We use a ValueKey(isNight) to force a full widget rebuild
+                      // when theme changes, as the package may not update the view
+                      // color dynamically otherwise.
+                      key: ValueKey<bool>(isNight),
+                      filePath: widget.pdfPath,
+                      // Maintain the user's current page during theme rebuilds.
+                      defaultPage: ctrl.currentPage > 0
+                          ? ctrl.currentPage - 1
+                          : 0,
+                      enableSwipe: true,
+                      swipeHorizontal:
+                          false, // Vertical scrolling for natural reading.
+                      autoSpacing: true,
+                      pageFling: true, // Swipes snap to the next full page.
+                      pageSnap: true,
+                      fitPolicy: FitPolicy.BOTH,
+                      nightMode: isNight,
+                      backgroundColor: isNight
+                          ? AppColors.scaffoldBackground
+                          : Colors.white,
 
-                  onViewCreated: (c) {
-                    _pdfController = c;
-                  },
-                  onRender: (pages) {
-                    try {
-                      // Sync document metadata with our controller.
-                      ctrl.setTotalPages(pages ?? 0, context: context);
-                    } catch (_) {
-                      showAppSnackBar(context, 'Could not render PDF pages.');
-                    }
-                  },
-                  onPageChanged: (page, _) {
-                    try {
-                      ctrl.setCurrentPage(page ?? 0, context: context);
-                    } catch (_) {
-                      // Non-critical update.
-                    }
-                  },
-                  onError: (error) {
-                    showAppSnackBar(
-                      context,
-                      'Could not open this PDF. The file may be corrupted.',
-                    );
-                  },
-                  onPageError: (page, error) {
-                    showAppSnackBar(context, 'Could not load page $page.');
-                  },
-                ),
-              ),
+                      onViewCreated: (c) {
+                        _pdfController = c;
+                      },
+                      onRender: (pages) {
+                        try {
+                          // Sync document metadata with our controller.
+                          ctrl.setTotalPages(pages ?? 0, context: context);
+                        } catch (_) {
+                          showAppSnackBar(
+                            context,
+                            'Could not render PDF pages.',
+                          );
+                        }
+                      },
+                      onPageChanged: (page, _) {
+                        try {
+                          ctrl.setCurrentPage(page ?? 0, context: context);
+                        } catch (_) {
+                          // Non-critical update.
+                        }
+                      },
+                      onError: (error) {
+                        showAppSnackBar(
+                          context,
+                          'Could not open this PDF. The file may be corrupted.',
+                        );
+                      },
+                      onPageError: (page, error) {
+                        showAppSnackBar(context, 'Could not load page $page.');
+                      },
+                    ),
+                  ),
 
-              // ── Floating Page Indicator ──────────────────────────────────
-              if (ctrl.totalPages > 0)
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: GestureDetector(
-                    onTap: () => _showJumpToPageDialog(context, ctrl),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppDimensions.pageIndicatorPaddingH,
-                        vertical: AppDimensions.pageIndicatorPaddingV,
-                      ),
-                      decoration: BoxDecoration(
-                        color: ctrl.isNightMode
-                            ? AppColors.pageIndicatorBackground
-                            : const Color(0xDDFFFFFF),
-                        borderRadius: BorderRadius.circular(
-                          AppDimensions.pageIndicatorBorderRadius,
-                        ),
-                        border: Border.all(
-                          color: AppColors.dividerColor,
-                          width: 1,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.scaffoldBackground.withValues(
-                              alpha: 0.3,
-                            ),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                  // ── Draggable Page Indicator ──────────────────────────────────
+                  if (ctrl.totalPages > 0)
+                    Positioned(
+                      top: _indicatorTop,
+                      right: 12,
+                      child: GestureDetector(
+                        onTap: () => _showJumpToPageDialog(context, ctrl),
+                        onVerticalDragUpdate: (details) {
+                          const pillHeight = 36.0;
+                          final newTop = (_indicatorTop + details.delta.dy)
+                              .clamp(0.0, bodyHeight - pillHeight);
+                          setState(() => _indicatorTop = newTop);
+                          // Map drag position → page number
+                          // top=0 → page 1, bottom → last page
+                          final ratio = newTop / (bodyHeight - pillHeight);
+                          final targetPage = (ratio * ctrl.totalPages - 1)
+                              .round();
+                          _pdfController?.setPage(targetPage);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppDimensions.pageIndicatorPaddingH,
+                            vertical: AppDimensions.pageIndicatorPaddingV,
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        '${ctrl.currentPage} / ${ctrl.totalPages}',
-                        style: AppTextStyles.pageIndicator.copyWith(
-                          color: ctrl.isNightMode
-                              ? AppColors.primaryText
-                              : AppColors.cardBackground,
+                          decoration: BoxDecoration(
+                            color: ctrl.isNightMode
+                                ? AppColors.pageIndicatorBackground
+                                : AppColors.primaryText,
+                            borderRadius: BorderRadius.circular(
+                              AppDimensions.pageIndicatorBorderRadius,
+                            ),
+                            border: Border.all(
+                              color: AppColors.dividerColor,
+                              width: 1.5,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.scaffoldBackground.withValues(
+                                  alpha: 0.3,
+                                ),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            '${ctrl.currentPage} / ${ctrl.totalPages}',
+                            style: AppTextStyles.pageIndicator.copyWith(
+                              color: ctrl.isNightMode
+                                  ? AppColors.primaryText
+                                  : AppColors.cardBackground,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
 
-              // ── Sliding Search/Copy Bar ──────────────────────────────────
-              // Note: flutter_pdfview renders as images; this bar allows
-              // the user to type and copy text independently.
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOut,
-                bottom: ctrl.isSearchBarVisible ? 0 : -80,
-                left: 0,
-                right: 0,
-                child: _CopyTextBar(isNightMode: ctrl.isNightMode),
-              ),
-            ],
+                  // ── Sliding Search/Copy Bar ──────────────────────────────────
+                  // Note: flutter_pdfview renders as images; this bar allows
+                  // the user to type and copy text independently.
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    bottom: ctrl.isSearchBarVisible ? 0 : -80,
+                    left: 0,
+                    right: 0,
+                    child: _CopyTextBar(isNightMode: ctrl.isNightMode),
+                  ),
+                ],
+              );
+            },
           ),
         );
       },
