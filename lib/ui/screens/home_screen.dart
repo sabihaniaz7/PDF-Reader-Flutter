@@ -67,7 +67,7 @@ class _HomeScreenState extends State<HomeScreen>
       context: context,
       isScrollControlled: true,
       backgroundColor:
-          Colors.transparent, // Use custom modal styling from AppThemes.
+          AppColors.transparent, // Use custom modal styling from AppTheme.
       builder: (_) {
         return Container(
           decoration: BoxDecoration(
@@ -151,128 +151,130 @@ class _HomeScreenState extends State<HomeScreen>
   Widget build(BuildContext context) {
     return Consumer<PdfLibraryController>(
       builder: (context, controller, _) {
-        return Scaffold(
-          backgroundColor: AppColors.scaffoldBackground,
-          appBar: AppBar(
+        return SafeArea(
+          child: Scaffold(
             backgroundColor: AppColors.scaffoldBackground,
-            elevation: 0,
-            // Toggle between app title and search input.
-            title: _isSearching
-                ? TextField(
-                    controller: _searchController,
-                    autofocus: true,
-                    keyboardType: TextInputType.text,
-                    style: const TextStyle(color: AppColors.primaryText),
-                    cursorColor: AppColors.pdfIconColor,
-                    decoration: const InputDecoration(
-                      hintText: "Search PDFs",
-                      hintStyle: TextStyle(color: AppColors.secondaryText),
-                      border: InputBorder.none,
-                    ),
-                    onChanged: controller.search,
-                  )
-                : const Text("PDF Reader", style: AppTextStyles.appBarTitle),
-            actions: [
-              // Search toggle button (starts/stops search mode).
-              IconButton(
-                icon: Icon(
-                  _isSearching ? Icons.close_rounded : Icons.search_rounded,
-                ),
-                iconSize: 26,
-                color: AppColors.primaryText,
-                onPressed: () {
-                  setState(() {
-                    _isSearching = !_isSearching;
-                    if (!_isSearching) {
-                      _searchController.clear();
-                      controller.search(""); // Reset list to full library.
-                    }
-                  });
-                },
-              ),
-              // Sort preference button.
-              IconButton(
-                icon: const Icon(
-                  Icons.sort_rounded,
-                  color: AppColors.primaryText,
-                  size: 26,
-                ),
-                onPressed: () => _showSortSheet(context, controller),
-              ),
-              // Manual Refresh button to trigger a device re-scan.
-              IconButton(
-                tooltip: 'Refresh',
-                icon: controller.isLoading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          color: AppColors.primaryText,
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Icon(
-                        Icons.refresh_rounded,
-                        color: AppColors.primaryText,
-                        size: 26,
+            appBar: AppBar(
+              backgroundColor: AppColors.scaffoldBackground,
+              elevation: 0,
+              // Toggle between app title and search input.
+              title: _isSearching
+                  ? TextField(
+                      controller: _searchController,
+                      autofocus: true,
+                      keyboardType: TextInputType.text,
+                      style: const TextStyle(color: AppColors.primaryText),
+                      cursorColor: AppColors.pdfIconColor,
+                      decoration: const InputDecoration(
+                        hintText: "Search PDFs",
+                        hintStyle: TextStyle(color: AppColors.secondaryText),
+                        border: InputBorder.none,
                       ),
-                onPressed: () => controller.refreshPdfs(context: context),
-              ),
-            ],
-            // Tab bar for switching between library segments.
-            bottom: TabBar(
-              controller: _tabController,
-              indicatorColor: AppColors.tabIndicator,
-              indicatorWeight: 2.5,
-              labelColor: AppColors.tabLabelActive,
-              unselectedLabelColor: AppColors.tabLabelInactive,
-              labelStyle: AppTextStyles.tabLabel,
-              unselectedLabelStyle: AppTextStyles.tabLabel,
-              tabs: const [
-                Tab(text: 'On Device'),
-                Tab(text: 'Recent'),
-                Tab(text: 'Favorites'),
-              ],
-            ),
-          ),
-          // Conditional body: show loader during first launch scan, else show tabs.
-          body: controller.isLoading && controller.allFiles.isEmpty
-              ? const _FirstLaunchLoader()
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // Tab 1: Full Library (All discovered PDFs).
-                    PdfListTab(
-                      files: controller.allFiles,
-                      isLoading: controller.isLoading,
-                      emptyMessage: "No PDFs found on device",
-                      onFileTap: (file) => _openPdf(context, file),
-                      onToggleFavorite: controller.toggleFavorite,
-                      onDelete: controller.deleteFile,
-                      onShare: controller.shareFile,
-                    ),
-                    // Tab 2: Recents (Files sorted by last opened time).
-                    PdfListTab(
-                      files: controller.recentFiles,
-                      isLoading: controller.isLoading,
-                      emptyMessage: "No recently opened PDFs",
-                      onFileTap: (file) => _openPdf(context, file),
-                      onToggleFavorite: controller.toggleFavorite,
-                      onDelete: controller.deleteFile,
-                      onShare: controller.shareFile,
-                    ),
-                    // Tab 3: Favorites (User-starred files).
-                    PdfListTab(
-                      files: controller.favouriteFiles,
-                      isLoading: controller.isLoading,
-                      emptyMessage: "No Starred PDFs yet",
-                      onFileTap: (file) => _openPdf(context, file),
-                      onToggleFavorite: controller.toggleFavorite,
-                      onDelete: controller.deleteFile,
-                      onShare: controller.shareFile,
-                    ),
-                  ],
+                      onChanged: controller.search,
+                    )
+                  : const Text("PDF Reader", style: AppTextStyles.appBarTitle),
+              actions: [
+                // Search toggle button (starts/stops search mode).
+                IconButton(
+                  icon: Icon(
+                    _isSearching ? Icons.close_rounded : Icons.search_rounded,
+                  ),
+                  iconSize: 26,
+                  color: AppColors.primaryText,
+                  onPressed: () {
+                    setState(() {
+                      _isSearching = !_isSearching;
+                      if (!_isSearching) {
+                        _searchController.clear();
+                        controller.search(""); // Reset list to full library.
+                      }
+                    });
+                  },
                 ),
+                // Sort preference button.
+                IconButton(
+                  icon: const Icon(
+                    Icons.sort_rounded,
+                    color: AppColors.primaryText,
+                    size: 26,
+                  ),
+                  onPressed: () => _showSortSheet(context, controller),
+                ),
+                // Manual Refresh button to trigger a device re-scan.
+                IconButton(
+                  tooltip: 'Refresh',
+                  icon: controller.isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            color: AppColors.primaryText,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.refresh_rounded,
+                          color: AppColors.primaryText,
+                          size: 26,
+                        ),
+                  onPressed: () => controller.refreshPdfs(context: context),
+                ),
+              ],
+              // Tab bar for switching between library segments.
+              bottom: TabBar(
+                controller: _tabController,
+                indicatorColor: AppColors.tabIndicator,
+                indicatorWeight: 2.5,
+                labelColor: AppColors.tabLabelActive,
+                unselectedLabelColor: AppColors.tabLabelInactive,
+                labelStyle: AppTextStyles.tabLabel,
+                unselectedLabelStyle: AppTextStyles.tabLabel,
+                tabs: const [
+                  Tab(text: 'On Device'),
+                  Tab(text: 'Recent'),
+                  Tab(text: 'Favorites'),
+                ],
+              ),
+            ),
+            // Conditional body: show loader during first launch scan, else show tabs.
+            body: controller.isLoading && controller.allFiles.isEmpty
+                ? const _FirstLaunchLoader()
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Tab 1: Full Library (All discovered PDFs).
+                      PdfListTab(
+                        files: controller.allFiles,
+                        isLoading: controller.isLoading,
+                        emptyMessage: "No PDFs found on device",
+                        onFileTap: (file) => _openPdf(context, file),
+                        onToggleFavorite: controller.toggleFavorite,
+                        onDelete: controller.deleteFile,
+                        onShare: controller.shareFile,
+                      ),
+                      // Tab 2: Recents (Files sorted by last opened time).
+                      PdfListTab(
+                        files: controller.recentFiles,
+                        isLoading: controller.isLoading,
+                        emptyMessage: "No recently opened PDFs",
+                        onFileTap: (file) => _openPdf(context, file),
+                        onToggleFavorite: controller.toggleFavorite,
+                        onDelete: controller.deleteFile,
+                        onShare: controller.shareFile,
+                      ),
+                      // Tab 3: Favorites (User-starred files).
+                      PdfListTab(
+                        files: controller.favouriteFiles,
+                        isLoading: controller.isLoading,
+                        emptyMessage: "No Starred PDFs yet",
+                        onFileTap: (file) => _openPdf(context, file),
+                        onToggleFavorite: controller.toggleFavorite,
+                        onDelete: controller.deleteFile,
+                        onShare: controller.shareFile,
+                      ),
+                    ],
+                  ),
+          ),
         );
       },
     );
@@ -295,7 +297,7 @@ class _FirstLaunchLoader extends StatelessWidget {
           SizedBox(height: 6),
           Text(
             "This may take a few seconds on first launch",
-            style: TextStyle(color: AppColors.secondaryText, fontSize: 12),
+            style: AppTextStyles.loaderSubtitle,
           ),
         ],
       ),

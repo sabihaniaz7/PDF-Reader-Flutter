@@ -10,6 +10,7 @@ class AppColors {
 
   // Background colors primarily used for the dark theme.
   static const Color scaffoldBackground = Color(0xFF121212);
+  static const Color lightBackground = Color(0xFFFFFFFF);
   static const Color cardBackground = Color(0xFF1E1E1E);
   static const Color modalBackground = Color(0xFF1E1E1E);
   static const Color tabBarBackground = Color(0xFF121212);
@@ -17,6 +18,8 @@ class AppColors {
   static const Color bottomNavBackground = Color(0xFF1A1A1A);
   static const Color pageIndicatorBackground = Color(0xCC000000);
   static const Color searchBarBackground = Color(0xFF2A2A2A);
+  static const Color lightSearchBarBackground = Color(0xFFF0F0F0);
+  static const Color transparent = Colors.transparent;
 
   // Text Colors for clear contrast.
   static const Color primaryText = Color(0xFFFFFFFF);
@@ -59,6 +62,13 @@ class AppTextStyles {
   static const TextStyle appBarTitle = TextStyle(
     color: AppColors.primaryText,
     fontSize: 22,
+    fontWeight: FontWeight.bold,
+    letterSpacing: 0.5,
+  );
+
+  static const TextStyle appBarTitleSmall = TextStyle(
+    color: AppColors.primaryText,
+    fontSize: 16,
     fontWeight: FontWeight.bold,
     letterSpacing: 0.5,
   );
@@ -125,6 +135,16 @@ class AppTextStyles {
   static const TextStyle searchHint = TextStyle(
     color: AppColors.secondaryText,
     fontSize: 14,
+  );
+
+  static const TextStyle searchInput = TextStyle(
+    color: AppColors.primaryText,
+    fontSize: 14,
+  );
+
+  static const TextStyle loaderSubtitle = TextStyle(
+    color: AppColors.secondaryText,
+    fontSize: 12,
   );
 }
 

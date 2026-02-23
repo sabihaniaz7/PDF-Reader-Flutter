@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/logic/controllers/pdf_library_controller.dart';
