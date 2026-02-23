@@ -39,7 +39,7 @@ class PdfListTab extends StatelessWidget {
   void _showOptionsModal(BuildContext context, PdfFileModel file) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.transparent,
+      backgroundColor: AppColors.modalBackground,
       isScrollControlled: true,
       builder: (_) => PdfOptionsModal(
         file: file,
