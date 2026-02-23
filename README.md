@@ -1,12 +1,44 @@
 # PDF Reader
 
 A modern, dark-themed PDF reader app built with Flutter.
+Designed exclusively for **Android** and **iOS** devices.
 Browse, organise, and read all PDF files stored on your device.
+
+> [!IMPORTANT]
+> This application has currently only been tested on **Android**. Support for **iOS** is implemented according to documentation but has not been verified on physical or simulated iOS devices.
+
+---
 
 ![Flutter](https://img.shields.io/badge/Flutter-3.38.6-02569B?logo=flutter&logoColor=white)
 ![Dart](https://img.shields.io/badge/Dart-3.10.7-0175C2?logo=dart&logoColor=white)
 ![Platform](https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightpink)
-![License](https://img.shields.io/badge/License-MIT-green)
+
+---
+
+## 📸 Screenshots
+
+| PDF List | PDF Options |
+| :---: | :---: |
+| ![PDF Library List](images/PdfsList.png) | ![PDF Options](images/PdfOptions.png) |
+
+| Light Mode Viewer | Dark Mode Viewer |
+| :---: | :---: |
+| ![PDF Page Light](images/PdfPageLight.png) | ![PDF Page Dark](images/PdfPageDark.png) |
+
+| Jump to Page | File Information |
+| :---: | :---: |
+| ![Go To Page Dialog](images/GoToPageLight.png) | ![File Info Modal](images/PdfInfo.png) |
+
+| Favorites Tab | Sort Options |
+| :---: | :---: |
+| ![Favorites Tab](images/FavTab.png) | ![Sort Options](images/SortBy.png) |
+
+---
+
+## 🛠️ Core Technologies
+
+- **State Management**: [Provider](https://pub.dev/packages/provider) for clean and efficient state handling.
+- **Local Storage**: [Shared Preferences](https://pub.dev/packages/shared_preferences) for persistent storage of favourites, recents, and file cache.
 
 ---
 
@@ -21,19 +53,15 @@ Browse, organise, and read all PDF files stored on your device.
 | 🌙 **Night / Day Mode** | Toggle inside the PDF viewer per document |
 | 📊 **Sort Options** | Sort by Name, Date, or File Size (ascending/descending) |
 | 🔍 **Search** | Filter PDFs by filename instantly |
-| 🗑️ **Delete** | Remove PDFs from device with confirmation |
+| � **Text Copy Bar** | Bottom sliding bar allows typing and copying text while viewing |
+| 🛡️ **SafeArea UI** | Enhanced layout with `SafeArea` for modern notched devices |
+| �🗑️ **Delete** | Remove PDFs from device with confirmation |
 | 📤 **Share** | Share any PDF via the OS share sheet |
 | ℹ️ **File Info** | View path, size, and dates |
 | 📖 **Vertical Scroll** | Pages scroll naturally top-to-bottom with snap |
 | 🔢 **Page Indicator** | Floating overlay showing current/total pages; tap to jump |
 | 📂 **Open With** | Appears in Android "Open With" when tapping any `.pdf` file |
 | 🔄 **Manual Refresh** | Rescan device for newly added PDFs via refresh button |
-
----
-
-## 📸 Screenshots
-
-> Add your screenshots here after building the app.
 
 ---
 
@@ -62,6 +90,50 @@ lib/
 │       ├── pdf_list_tab.dart        # Reusable tab body + dialogs
 │       └── pdf_options_modal.dart   # Bottom sheet with actions
 └── main.dart                        # App entry + "Open With" intent handling
+```
+
+---
+
+## 📦 Dependencies
+
+| Package | Purpose |
+| --- | --- |
+| `flutter_pdfview` | Render PDF files natively |
+| `provider` | State management (Provider) |
+| `shared_preferences` | Local persistence (Shared Preferences - favourites, recents, file cache) |
+| `permission_handler` | Runtime storage permissions |
+| `external_path` | Get external storage path on Android |
+| `share_plus` | OS share sheet |
+| `receive_sharing_intent` | Handle "Open With" from file manager |
+| `path_provider` | Standard directory access (required for iOS) |
+| `font_awesome_flutter` | Stylized icons for PDF cards |
+| `flutter_launcher_icons` | App icon generation |
+| `path` | File path utilities |
+
+---
+
+## Architecture
+
+Clean separation of concerns across three layers:
+
+```text
+
+Data Layer          →  Models + Repositories
+Logic Layer         →  Controllers (ChangeNotifier / Provider)
+UI Layer            →  Screens + Widgets
+```
+
+**No business logic in UI files.**
+**No hardcoded colours or strings in widgets** — everything references `app_theme.dart`.
+
+### Local Storage Strategy
+
+```text
+First launch   →  Scan device  →  Save to SharedPreferences
+Every reopen   →  Load from SharedPreferences  (instant, no scan)
+New PDFs added →  Tap ↻ Refresh  →  Rescan + merge saved state
+Star a PDF     →  Update SharedPreferences immediately
+Open a PDF     →  Save lastOpened timestamp immediately
 ```
 
 ---
@@ -151,7 +223,7 @@ android {
 
 ---
 
-## 🍎 iOS Setup
+## iOS Setup
 
 Add to `ios/Runner/Info.plist` inside the main `<dict>`:
 
@@ -175,47 +247,16 @@ Add to `ios/Runner/Info.plist` inside the main `<dict>`:
 <string>PDF Library needs access to your documents to find PDF files.</string>
 ```
 
----
+### iOS Restrictions (Sandboxing)
 
-## 📦 Dependencies
-
-| Package | Purpose |
-| --- | --- |
-| `flutter_pdfview` | Render PDF files natively |
-| `provider` | State management |
-| `shared_preferences` | Local persistence (favourites, recents, file cache) |
-| `permission_handler` | Runtime storage permissions |
-| `external_path` | Get external storage path on Android |
-| `share_plus` | OS share sheet |
-| `receive_sharing_intent` | Handle "Open With" from file manager |
-| `path_provider` | Documents directory on iOS |
-| `path` | File path utilities |
-
----
-
-## 🏗️ Architecture
-
-Clean separation of concerns across three layers:
-
-```text
-
-Data Layer          →  Models + Repositories
-Logic Layer         →  Controllers (ChangeNotifier / Provider)
-UI Layer            →  Screens + Widgets
-```
-
-**No business logic in UI files.**
-**No hardcoded colours or strings in widgets** — everything references `app_theme.dart`.
-
-### Local Storage Strategy
-
-```text
-First launch   →  Scan device  →  Save to SharedPreferences
-Every reopen   →  Load from SharedPreferences  (instant, no scan)
-New PDFs added →  Tap ↻ Refresh  →  Rescan + merge saved state
-Star a PDF     →  Update SharedPreferences immediately
-Open a PDF     →  Save lastOpened timestamp immediately
-```
+> [!IMPORTANT]
+> iOS employs a strict **App Sandboxing** model that differs significantly from Android.
+>
+> 1. **Limited File Discovery**: The app cannot scan the entire device storage (e.g., Downloads, WhatsApp folders).
+> 2. **Documents Folder**: Only files placed in the app's local **Documents** folder (visible in the iOS Files app under "On My iPhone/iPad > PDF Library") will be automatically discovered.
+> 3. **Open In / Share**: To view PDFs from other apps (like Safari or Mail), use the **"Open In..."** menu and select **PDF Library**.
+> [!WARNING]
+> Please note that the iOS version of this app has **not** been tested. Testing has been performed exclusively on Android.
 
 ---
 

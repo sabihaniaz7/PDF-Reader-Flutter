@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:path_provider/path_provider.dart';
 // Android-only import guarded at runtime
 import 'package:external_path/external_path.dart'
     if (dart.library.html) 'package:pdf_reader/data/repositories/stub_external_path.dart';
@@ -48,8 +49,8 @@ class PdfRepository {
   /// Retrieves the standard Documents directory path for iOS applications.
   Future<String?> _getIOSDocumentsPath() async {
     try {
-      // Note: Implementation typically requires path_provider: getApplicationDocumentsDirectory().
-      return null;
+      final directory = await getApplicationDocumentsDirectory();
+      return directory.path;
     } catch (_) {
       return null;
     }

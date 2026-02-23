@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 
@@ -49,14 +50,14 @@ class PdfCard extends StatelessWidget {
                   AppDimensions.iconContainerBorderRadius,
                 ),
                 border: Border.all(
-                  color: AppColors.pdfIconBorder,
+                  color: AppColors.pdfIconColor,
                   width: AppDimensions.iconContainerBorderWidth,
                 ),
               ),
-              child: const Center(
+              child: Center(
                 child: Icon(
-                  Icons.picture_as_pdf_rounded,
-                  color: AppColors.pdfIconColor,
+                  FontAwesomeIcons.filePdf,
+                  color: AppColors.pdfIconColor.withValues(alpha: 0.8),
                   size: AppDimensions.pdfIconSize,
                 ),
               ),

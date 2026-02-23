@@ -29,7 +29,7 @@ class PdfOptionsModal extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppColors.modalBackground,
+        color: AppColors.transparent,
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppDimensions.modalTopRadius),
         ),
