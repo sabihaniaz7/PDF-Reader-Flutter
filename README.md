@@ -55,7 +55,7 @@ Browse, organise, and read all PDF files stored on your device.
 | 🔍 **Search** | Filter PDFs by filename instantly |
 | � **Text Copy Bar** | Bottom sliding bar allows typing and copying text while viewing |
 | 🛡️ **SafeArea UI** | Enhanced layout with `SafeArea` for modern notched devices |
-| �🗑️ **Delete** | Remove PDFs from device with confirmation |
+| 🗑️ **Delete** | Remove PDFs from device with confirmation |
 | 📤 **Share** | Share any PDF via the OS share sheet |
 | ℹ️ **File Info** | View path, size, and dates |
 | 📖 **Vertical Scroll** | Pages scroll naturally top-to-bottom with snap |
