@@ -55,7 +55,7 @@ class PdfCard extends StatelessWidget {
                 ),
               ),
               child: Center(
-                child: Icon(
+                child: FaIcon(
                   FontAwesomeIcons.filePdf,
                   color: AppColors.pdfIconColor.withValues(alpha: 0.8),
                   size: AppDimensions.pdfIconSize,

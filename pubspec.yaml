@@ -35,13 +35,13 @@ dependencies:
   permission_handler: ^12.0.1 # Permission Handler
   path: ^1.9.1 # Path
   provider: ^6.1.5+1 # Provider
-  share_plus: ^12.0.1 # Share
+  share_plus: ^13.1.0 # Share
   url_launcher: ^6.3.2 # Open links from PDFs
   # Open PDF from file manager (intent handling)
-  receive_sharing_intent: ^1.8.0
+  receive_sharing_intent: ^1.8.1
   # Local storage — persists PDF list, favourites, recents across app restarts
-  shared_preferences: ^2.5.4
-  font_awesome_flutter: ^10.12.0
+  shared_preferences: ^2.5.5
+  font_awesome_flutter: ^11.0.0
   path_provider: ^2.1.2
   # flutter_launcher_icons: ^0.14.4
   # The following adds the Cupertino Icons font to your application.
