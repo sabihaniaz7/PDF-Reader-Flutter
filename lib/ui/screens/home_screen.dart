@@ -3,7 +3,7 @@ import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/data/models/sort_option.dart';
 import 'package:pdf_reader/logic/controllers/pdf_library_controller.dart';
 import 'package:pdf_reader/ui/screens/pdf_viewer_screen.dart';
-import 'package:pdf_reader/widgets/pdf_list_tab.dart';
+import 'package:pdf_reader/ui/widgets/pdf_list_tab.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 import 'package:provider/provider.dart';
 

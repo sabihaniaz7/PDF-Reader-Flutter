@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:path/path.dart' as p;
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
@@ -12,6 +13,20 @@ import 'package:external_path/external_path.dart'
 /// It handles scanning directories for .pdf files, requesting necessary permissions,
 /// and performing file-level operations like deletion.
 class PdfRepository {
+  /// Directories to skip entirely during the file system scan.
+  static const Set<String> _ignoredDirectories = {
+    'android',
+    'dcim',
+    'pictures',
+    'music',
+    'movies',
+    'alarms',
+    'ringtones',
+    'notifications',
+    'audiobooks',
+    'podcasts',
+  };
+
   /// Scans the device's external storage for all PDF files.
   ///
   /// On Android, it requests [Permission.manageExternalStorage] or falls back to
@@ -85,6 +100,12 @@ class PdfRepository {
               ),
             );
           } else if (entity is Directory) {
+            final dirName = p.basename(entity.path).toLowerCase();
+            // Prune hidden directories and excluded media/system directories.
+            if (dirName.startsWith('.') ||
+                _ignoredDirectories.contains(dirName)) {
+              continue;
+            }
             // Recurse into subdirectories.
             await _scanDirectory(entity.path, results);
           }

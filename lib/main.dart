@@ -4,6 +4,7 @@ import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/logic/controllers/pdf_library_controller.dart';
 import 'package:pdf_reader/ui/screens/home_screen.dart';
 import 'package:pdf_reader/ui/screens/pdf_viewer_screen.dart';
+import 'package:pdfrx/pdfrx.dart';
 import 'package:provider/provider.dart';
 import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 
@@ -13,6 +14,8 @@ import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 /// It also handles deep linking via [receive_sharing_intent] to allow the app to be opened
 /// when a PDF file is shared from another application.
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  pdfrxFlutterInitialize(dismissPdfiumWasmWarnings: true);
   runApp(
     // Global provider for managing the PDF library state across the entire app.
     ChangeNotifierProvider(

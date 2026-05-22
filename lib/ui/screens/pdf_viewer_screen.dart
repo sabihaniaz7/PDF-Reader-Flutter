@@ -1,19 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
+import 'package:pdfrx/pdfrx.dart' as pdfrx;
 import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/logic/controllers/pdf_library_controller.dart';
+import 'package:pdf_reader/ui/widgets/pdf_document_view.dart';
+import 'package:pdf_reader/ui/widgets/pdf_jump_to_page_dialog.dart';
+import 'package:pdf_reader/ui/widgets/pdf_page_indicator.dart';
+import 'package:pdf_reader/ui/widgets/pdf_search_bar.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// A dedicated screen for viewing PDF documents.
-///
-/// It utilizes [flutter_pdfview] for native rendering and includes
-/// features like night mode toggling and jump-to-page navigation.
 class PdfViewerScreen extends StatelessWidget {
-  /// The absolute file path of the PDF to display.
   final String pdfPath;
-
-  /// The display name (filename) of the PDF.
   final String pdfName;
 
   const PdfViewerScreen({
@@ -24,7 +22,6 @@ class PdfViewerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Provide a localized controller for managing the viewer's specific state.
     return ChangeNotifierProvider(
       create: (_) => PdfViewerController(),
       child: _PdfViewerBody(pdfPath: pdfPath, pdfName: pdfName),
@@ -32,9 +29,6 @@ class PdfViewerScreen extends StatelessWidget {
   }
 }
 
-// ----------------------------------------------------------
-
-/// Internal implementation of the PDF viewer UI.
 class _PdfViewerBody extends StatefulWidget {
   final String pdfPath;
   final String pdfName;
@@ -46,308 +40,154 @@ class _PdfViewerBody extends StatefulWidget {
 }
 
 class _PdfViewerBodyState extends State<_PdfViewerBody> {
-  /// Reference to the underlying PDF view controller provided by the package.
-  PDFViewController? _pdfController;
-
-  /// Controller for the numeric input field in the 'Jump to Page' dialog.
-  final TextEditingController _jumpController = TextEditingController();
+  late final pdfrx.PdfViewerController _pdfController;
+  pdfrx.PdfTextSearcher? _textSearcher;
   double _indicatorTop = 12.0;
 
   @override
+  void initState() {
+    super.initState();
+    _pdfController = pdfrx.PdfViewerController();
+  }
+
+  @override
   void dispose() {
-    _jumpController.dispose();
+    _textSearcher?.removeListener(_onSearchUpdated);
+    _textSearcher?.dispose();
     super.dispose();
   }
 
-  // ── Jump to page dialog ───────────────────────────────────────────────────
+  void _onSearchUpdated() {
+    if (mounted) setState(() {});
+  }
 
-  /// Shows an [AlertDialog] prompting the user to enter a specific page number.
-  void _showJumpToPageDialog(BuildContext context, PdfViewerController ctrl) {
-    _jumpController.clear();
-    final isNight = ctrl.isNightMode;
-    showDialog(
+  void _ensureTextSearcher() {
+    if (_textSearcher != null) return;
+
+    _textSearcher = pdfrx.PdfTextSearcher(_pdfController)
+      ..addListener(_onSearchUpdated);
+
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _handlePdfLinkTap(pdfrx.PdfLink link) async {
+    final url = link.url;
+    if (url != null) {
+      try {
+        final opened = await launchUrl(
+          url,
+          mode: LaunchMode.externalApplication,
+        );
+        if (!opened && mounted) {
+          showAppSnackBar(context, 'Could not open link.');
+        }
+      } catch (_) {
+        if (mounted) {
+          showAppSnackBar(context, 'Could not open link.');
+        }
+      }
+      return;
+    }
+
+    final destination = link.dest;
+    if (destination != null) {
+      await _pdfController.goToDest(destination);
+    }
+  }
+
+  void _showJumpToPageDialog(PdfViewerController controller) {
+    showPdfJumpToPageDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: isNight
-            ? AppColors.cardBackground
-            : AppColors.lightBackground,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        title: Text(
-          'Go to Page',
-          style: AppTextStyles.modalTitle.copyWith(
-            color: isNight ? AppColors.primaryText : AppColors.cardBackground,
-          ),
-        ),
-        content: TextField(
-          controller: _jumpController,
-          keyboardType: TextInputType.number,
-          style: TextStyle(
-            color: isNight ? AppColors.primaryText : AppColors.cardBackground,
-          ),
-          cursorColor: AppColors.pdfIconColor,
-          decoration: InputDecoration(
-            hintText: 'page (1 - ${ctrl.totalPages})',
-            hintStyle: AppTextStyles.searchHint.copyWith(
-              color: AppColors.secondaryText,
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(
-                color: isNight ? AppColors.dividerColor : AppColors.accentText,
-              ),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderSide: const BorderSide(color: AppColors.pdfIconColor),
-              borderRadius: BorderRadius.circular(8),
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: isNight
-                    ? AppColors.secondaryText
-                    : AppColors.tabLabelActive,
-              ),
-            ),
-          ),
-          TextButton(
-            onPressed: () {
-              try {
-                final page = int.parse(_jumpController.text.trim());
-                if (page >= 1 && page <= ctrl.totalPages) {
-                  // flutter_pdfview is 0-indexed.
-                  _pdfController?.setPage(page - 1);
-                  Navigator.pop(context);
-                } else {
-                  showAppSnackBar(
-                    context,
-                    'Enter a page Between 1 and ${ctrl.totalPages}.',
-                  );
-                }
-              } catch (_) {
-                showAppSnackBar(
-                  context,
-                  'Invalid page number. Please enter a number.',
-                );
-              }
-            },
-            child: const Text(
-              'Go',
-              style: TextStyle(color: AppColors.pdfIconColor),
-            ),
-          ),
-        ],
-      ),
+      controller: controller,
+      onPageSelected: (page) => _pdfController.goToPage(pageNumber: page),
     );
   }
 
-  // ----------- Build------------------------------
+  void _toggleSearchBar(PdfViewerController controller) {
+    if (_textSearcher == null) {
+      showAppSnackBar(context, 'PDF is still loading.');
+      return;
+    }
+
+    controller.toggleSearchBar();
+    if (!controller.isSearchBarVisible) {
+      _textSearcher?.resetTextSearch();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<PdfViewerController>(
-      builder: (context, ctrl, _) {
-        final isNight = ctrl.isNightMode;
-
-        // Colors for icons/text switch based on night mode to maintain visibility.
+      builder: (context, controller, _) {
+        final isNight = controller.isNightMode;
         final iconColor = isNight
             ? AppColors.primaryText
             : AppColors.cardBackground;
-
-        // Scaffold background adapts to night mode.
-        final bgColor = isNight
+        final backgroundColor = isNight
             ? AppColors.scaffoldBackground
             : AppColors.lightBackground;
 
         return SafeArea(
           child: Scaffold(
-            backgroundColor: bgColor,
-            appBar: AppBar(
-              backgroundColor: isNight
-                  ? AppColors.scaffoldBackground
-                  : AppColors.lightBackground,
-              elevation: 0,
-              iconTheme: IconThemeData(color: iconColor),
-              title: Text(
-                widget.pdfName,
-                style: AppTextStyles.appBarTitle.copyWith(
-                  fontSize: AppTextStyles.appBarTitleSmall.fontSize,
-                  color: iconColor,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              actions: [
-                // ── Night/Light Mode toggle ─────────────────────────────────
-                IconButton(
-                  tooltip: isNight ? 'Light Mode' : 'Night Mode',
-                  icon: Icon(
-                    isNight ? Icons.wb_sunny_rounded : Icons.nightlight_round,
-                    color: isNight
-                        ? AppColors.nightModeOff
-                        : AppColors.nightModeOn,
-                  ),
-                  onPressed: ctrl.toggleNightMode,
-                ),
-
-                // ── Bottom search bar toggle ────────────────────────────────
-                IconButton(
-                  tooltip: 'Copy Text',
-                  icon: Icon(
-                    ctrl.isSearchBarVisible
-                        ? Icons.search_off_rounded
-                        : Icons.search_rounded,
-                    color: iconColor,
-                  ),
-                  onPressed: ctrl.toggleSearchBar,
-                ),
-
-                // ── Navigation jump ─────────────────────────────────────────
-                IconButton(
-                  tooltip: 'Jump to page',
-                  icon: Icon(Icons.swap_vert),
-                  color: iconColor,
-                  onPressed: () => _showJumpToPageDialog(context, ctrl),
-                ),
-              ],
-            ),
+            backgroundColor: backgroundColor,
+            appBar: _buildAppBar(controller, isNight, iconColor),
             body: LayoutBuilder(
               builder: (context, constraints) {
-                final bodyHeight = constraints.maxHeight;
                 return Stack(
                   children: [
-                    // ── PDF Rendering Engine ─────────────────────────────────────
-                    ColoredBox(
-                      color: isNight
-                          ? AppColors.scaffoldBackground
-                          : AppColors.primaryText,
-                      child: PDFView(
-                        // We use a ValueKey(isNight) to force a full widget rebuild
-                        // when theme changes, as the package may not update the view
-                        // color dynamically otherwise.
-                        key: ValueKey<bool>(isNight),
-                        filePath: widget.pdfPath,
-                        // Maintain the user's current page during theme rebuilds.
-                        defaultPage: ctrl.currentPage > 0
-                            ? ctrl.currentPage - 1
-                            : 0,
-                        enableSwipe: true,
-                        swipeHorizontal:
-                            false, // Vertical scrolling for natural reading.
-                        autoSpacing: true,
-                        pageFling: true, // Swipes snap to the next full page.
-                        pageSnap: true,
-                        fitPolicy: FitPolicy.BOTH,
-                        nightMode: isNight,
-                        backgroundColor: isNight
-                            ? AppColors.scaffoldBackground
-                            : AppColors.lightBackground,
-
-                        onViewCreated: (c) {
-                          _pdfController = c;
-                        },
-                        onRender: (pages) {
-                          try {
-                            // Sync document metadata with our controller.
-                            ctrl.setTotalPages(pages ?? 0, context: context);
-                          } catch (_) {
-                            showAppSnackBar(
-                              context,
-                              'Could not render PDF pages.',
-                            );
-                          }
-                        },
-                        onPageChanged: (page, _) {
-                          try {
-                            ctrl.setCurrentPage(page ?? 0, context: context);
-                          } catch (_) {
-                            // Non-critical update.
-                          }
-                        },
-                        onError: (error) {
-                          showAppSnackBar(
-                            context,
-                            'Could not open this PDF. The file may be corrupted.',
-                          );
-                        },
-                        onPageError: (page, error) {
-                          showAppSnackBar(
-                            context,
-                            'Could not load page $page.',
-                          );
-                        },
-                      ),
+                    PdfDocumentView(
+                      pdfPath: widget.pdfPath,
+                      isNightMode: isNight,
+                      controller: _pdfController,
+                      textSearcher: _textSearcher,
+                      onLinkTap: _handlePdfLinkTap,
+                      onViewerReady: (document, pdfController) {
+                        _ensureTextSearcher();
+                        controller.setTotalPages(
+                          pdfController.pageCount,
+                          context: context,
+                        );
+                        controller.setCurrentPage(
+                          (pdfController.pageNumber ?? 1) - 1,
+                          context: context,
+                        );
+                      },
+                      onPageChanged: (pageNumber) {
+                        if (pageNumber == null) return;
+                        controller.setCurrentPage(
+                          pageNumber - 1,
+                          context: context,
+                        );
+                      },
                     ),
-
-                    // ── Draggable Page Indicator ──────────────────────────────────
-                    if (ctrl.totalPages > 0)
-                      Positioned(
+                    if (controller.totalPages > 0)
+                      PdfPageIndicator(
                         top: _indicatorTop,
-                        right: 12,
-                        child: GestureDetector(
-                          onTap: () => _showJumpToPageDialog(context, ctrl),
-                          onVerticalDragUpdate: (details) {
-                            const pillHeight = 36.0;
-                            final newTop = (_indicatorTop + details.delta.dy)
-                                .clamp(0.0, bodyHeight - pillHeight);
-                            setState(() => _indicatorTop = newTop);
-                            // Map drag position → page number
-                            // top=0 → page 1, bottom → last page
-                            final ratio = newTop / (bodyHeight - pillHeight);
-                            final targetPage = (ratio * ctrl.totalPages - 1)
-                                .round();
-                            _pdfController?.setPage(targetPage);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppDimensions.pageIndicatorPaddingH,
-                              vertical: AppDimensions.pageIndicatorPaddingV,
-                            ),
-                            decoration: BoxDecoration(
-                              color: ctrl.isNightMode
-                                  ? AppColors.pageIndicatorBackground
-                                  : AppColors.primaryText,
-                              borderRadius: BorderRadius.circular(
-                                AppDimensions.pageIndicatorBorderRadius,
-                              ),
-                              border: Border.all(
-                                color: AppColors.dividerColor,
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.scaffoldBackground
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Text(
-                              '${ctrl.currentPage} / ${ctrl.totalPages}',
-                              style: AppTextStyles.pageIndicator.copyWith(
-                                color: ctrl.isNightMode
-                                    ? AppColors.primaryText
-                                    : AppColors.cardBackground,
-                              ),
-                            ),
-                          ),
-                        ),
+                        bodyHeight: constraints.maxHeight,
+                        currentPage: controller.currentPage,
+                        totalPages: controller.totalPages,
+                        isNightMode: isNight,
+                        onTap: () => _showJumpToPageDialog(controller),
+                        onTopChanged: (top) {
+                          setState(() => _indicatorTop = top);
+                        },
+                        onPageSelected: (page) {
+                          _pdfController.goToPage(pageNumber: page);
+                        },
                       ),
-
-                    // ── Sliding Search/Copy Bar ──────────────────────────────────
-                    // Note: flutter_pdfview renders as images; this bar allows
-                    // the user to type and copy text independently.
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 250),
                       curve: Curves.easeOut,
-                      bottom: ctrl.isSearchBarVisible ? 0 : -80,
+                      bottom: controller.isSearchBarVisible ? 0 : -80,
                       left: 0,
                       right: 0,
-                      child: _CopyTextBar(isNightMode: ctrl.isNightMode),
+                      child: _textSearcher == null
+                          ? const SizedBox.shrink()
+                          : PdfSearchBar(
+                              isNightMode: isNight,
+                              textSearcher: _textSearcher!,
+                              onClose: controller.hideSearchBar,
+                            ),
                     ),
                   ],
                 );
@@ -358,125 +198,52 @@ class _PdfViewerBodyState extends State<_PdfViewerBody> {
       },
     );
   }
-}
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Copy text bar widget
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// A bottom bar widget for typing and copying text.
-class _CopyTextBar extends StatefulWidget {
-  final bool isNightMode;
-  const _CopyTextBar({required this.isNightMode});
-
-  @override
-  State<_CopyTextBar> createState() => _CopyTextBarState();
-}
-
-class _CopyTextBarState extends State<_CopyTextBar> {
-  final TextEditingController _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Styling adapts to night mode.
-    final barBg = widget.isNightMode
-        ? AppColors.cardBackground
-        : AppColors.lightBackground;
-    final fieldBg = widget.isNightMode
-        ? AppColors.searchBarBackground
-        : AppColors.lightSearchBarBackground;
-    final textColor = widget.isNightMode
-        ? AppColors.primaryText
-        : AppColors.cardBackground;
-
-    return Container(
-      color: barBg,
-      padding: const EdgeInsets.fromLTRB(16, 10, 8, 10),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            Icon(
-              Icons.search_rounded,
-              color: AppColors.secondaryText,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: fieldBg,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: TextField(
-                  controller: _controller,
-                  style: AppTextStyles.searchInput.copyWith(color: textColor),
-                  cursorColor: AppColors.pdfIconColor,
-                  decoration: InputDecoration(
-                    hintText: 'Type text to copy...',
-                    hintStyle: AppTextStyles.searchHint,
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
-                  ),
-                ),
-              ),
-            ),
-            // Button to copy typed content to system clipboard.
-            IconButton(
-              tooltip: 'Copy to clipboard',
-              icon: const Icon(
-                Icons.copy_rounded,
-                color: AppColors.accentText,
-                size: 22,
-              ),
-              onPressed: () {
-                final text = _controller.text.trim();
-                if (text.isEmpty) {
-                  showAppSnackBar(
-                    context,
-                    'Type some text first, then tap Copy',
-                  );
-                  return;
-                }
-                try {
-                  Clipboard.setData(ClipboardData(text: text));
-                  showAppSnackBar(
-                    context,
-                    'Copied to clipboard.',
-                    actionLabel: 'OK',
-                  );
-                } catch (_) {
-                  showAppSnackBar(
-                    context,
-                    'Could not copy text. Please try again.',
-                  );
-                }
-              },
-            ),
-            // Button to close/clear the bar.
-            IconButton(
-              tooltip: 'Clear',
-              icon: const Icon(
-                Icons.close_rounded,
-                color: AppColors.secondaryText,
-                size: 20,
-              ),
-              onPressed: () {
-                _controller.clear();
-                context.read<PdfViewerController>().hideSearchBar();
-              },
-            ),
-          ],
+  PreferredSizeWidget _buildAppBar(
+    PdfViewerController controller,
+    bool isNight,
+    Color iconColor,
+  ) {
+    return AppBar(
+      backgroundColor: isNight
+          ? AppColors.scaffoldBackground
+          : AppColors.lightBackground,
+      elevation: 0,
+      iconTheme: IconThemeData(color: iconColor),
+      title: Text(
+        widget.pdfName,
+        style: AppTextStyles.appBarTitle.copyWith(
+          fontSize: AppTextStyles.appBarTitleSmall.fontSize,
+          color: iconColor,
         ),
+        overflow: TextOverflow.ellipsis,
       ),
+      actions: [
+        IconButton(
+          tooltip: isNight ? 'Light Mode' : 'Night Mode',
+          icon: Icon(
+            isNight ? Icons.wb_sunny_rounded : Icons.nightlight_round,
+            color: isNight ? AppColors.nightModeOff : AppColors.nightModeOn,
+          ),
+          onPressed: controller.toggleNightMode,
+        ),
+        IconButton(
+          tooltip: 'Search Text',
+          icon: Icon(
+            controller.isSearchBarVisible
+                ? Icons.search_off_rounded
+                : Icons.search_rounded,
+            color: iconColor,
+          ),
+          onPressed: () => _toggleSearchBar(controller),
+        ),
+        IconButton(
+          tooltip: 'Jump to page',
+          icon: const Icon(Icons.swap_vert),
+          color: iconColor,
+          onPressed: () => _showJumpToPageDialog(controller),
+        ),
+      ],
     );
   }
 }

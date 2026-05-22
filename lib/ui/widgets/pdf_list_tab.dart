@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:pdf_reader/core/app_theme.dart';
 import 'package:pdf_reader/data/models/pdf_file_model.dart';
-import 'package:pdf_reader/widgets/pdf_card.dart';
-import 'package:pdf_reader/widgets/pdf_options_modal.dart';
+import 'package:pdf_reader/ui/widgets/pdf_card.dart';
+import 'package:pdf_reader/ui/widgets/pdf_options_modal.dart';
 
 /// A reusable tab view component that displays a scrollable list of [PdfCard]s.
 ///
@@ -141,8 +141,8 @@ class PdfListTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Show a spinner if the tab segments are explicitly loading.
-    if (isLoading) {
+    // Show a spinner if the tab segments are explicitly loading and we have no files cached.
+    if (isLoading && files.isEmpty) {
       return const Center(
         child: CircularProgressIndicator(color: AppColors.pdfIconColor),
       );

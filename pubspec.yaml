@@ -30,12 +30,13 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  flutter_pdfview: ^1.4.4 # PDF Viewer
+  pdfrx: ^2.4.1 # Selectable text & PDFium rendering
   external_path: ^2.2.0 # External Path
   permission_handler: ^12.0.1 # Permission Handler
   path: ^1.9.1 # Path
   provider: ^6.1.5+1 # Provider
   share_plus: ^12.0.1 # Share
+  url_launcher: ^6.3.2 # Open links from PDFs
   # Open PDF from file manager (intent handling)
   receive_sharing_intent: ^1.8.0
   # Local storage — persists PDF list, favourites, recents across app restarts

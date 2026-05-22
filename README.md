@@ -53,7 +53,11 @@ Browse, organise, and read all PDF files stored on your device.
 | **Night / Day Mode** | Toggle inside the PDF viewer per document |
 | **Sort Options** | Sort by Name, Date, or File Size (ascending/descending) |
 | **Search** | Filter PDFs by filename instantly |
-| **Text Copy Bar** | Bottom sliding bar allows typing and copying text while viewing |
+| **PDF Text Search** | Search inside the opened PDF using `pdfrx` text search |
+| **Search Match Navigation** | Jump between PDF text matches with previous/next controls |
+| **Selectable PDF Text** | Select text directly on rendered PDF pages |
+| **Copy PDF Text** | Copy selected PDF text through the native selection toolbar |
+| **PDF Link Handling** | Tap links inside PDFs to open them in the browser or matching app |
 | **SafeArea UI** | Enhanced layout with `SafeArea` for modern notched devices |
 | **Delete** | Remove PDFs from device with confirmation |
 | **Share** | Share any PDF via the OS share sheet |
@@ -86,10 +90,14 @@ lib/
 │   │   ├── home_screen.dart         # 3-tab main screen with sort & search
 │   │   └── pdf_viewer_screen.dart   # Full-screen reader with night mode
 │   └── widgets/
-│       ├── pdf_card.dart            # Custom card (no ListTile)
-│       ├── pdf_list_tab.dart        # Reusable tab body + dialogs
-│       └── pdf_options_modal.dart   # Bottom sheet with actions
-└── main.dart                        # App entry + "Open With" intent handling
+│       ├── pdf_card.dart                # Custom card
+│       ├── pdf_document_view.dart       # pdfrx renderer configuration
+│       ├── pdf_jump_to_page_dialog.dart # Reusable page jump dialog
+│       ├── pdf_list_tab.dart            # Reusable tab body + dialogs
+│       ├── pdf_options_modal.dart       # Bottom sheet with actions
+│       ├── pdf_page_indicator.dart      # Draggable page counter
+│       └── pdf_search_bar.dart          # PDF text search controls
+└── main.dart                        # App entry intent handling
 ```
 
 ---
@@ -98,7 +106,7 @@ lib/
 
 | Package | Version | Purpose |
 | --- | --- | --- |
-| `flutter_pdfview` | `^1.4.4` | Render PDF files natively |
+| `pdfrx` | `^2.4.1` | Render PDFs with selectable text, search highlighting, and PDFium support |
 | `provider` | `^6.1.5+1` | State management (Provider) |
 | `shared_preferences` | `^2.5.4` | Local persistence |
 | `permission_handler` | `^12.0.1` | Runtime storage permissions |
@@ -107,6 +115,7 @@ lib/
 | `receive_sharing_intent` | `^1.8.0` | Handle "Open With" from file manager |
 | `path_provider` | `^2.1.2` | Standard directory access (required for iOS) |
 | `font_awesome_flutter` | `^10.12.0` | Stylized icons for PDF cards |
+| `url_launcher` | `^6.3.2` | Open web links from PDF annotations |
 | `flutter_launcher_icons` | `^0.14.4` | App icon generation |
 | `path` | `^1.9.1` | File path utilities |
 
@@ -158,6 +167,36 @@ flutter pub get
 
 # 3. Run on your device
 flutter run
+```
+
+### Release Builds
+
+Before building a native Android or iOS release, remove `pdfrx`'s web-only PDFium WASM assets so they are not bundled into the app:
+
+```bash
+flutter pub get
+dart run pdfrx:remove_wasm_modules
+flutter build apk
+```
+
+FOR ANDROID RELEASE BUILD, USE THIS COMMAND
+
+```bash
+flutter build apk --release --dart-define=PDFRX_NO_WASM=true
+# or if you use app bundles:
+flutter build appbundle --release --dart-define=PDFRX_NO_WASM=true
+```
+
+FOR IOS RELEASE BUILD, USE THIS COMMAND:
+
+```bash
+flutter build ipa --release --dart-define=PDFRX_NO_WASM=true
+```
+
+Restore the WASM assets before running web builds:
+
+```bash
+dart run pdfrx:remove_wasm_modules --revert
 ```
 
 ---

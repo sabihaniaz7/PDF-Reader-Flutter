@@ -48,18 +48,23 @@ class PdfLibraryController extends ChangeNotifier {
 
   /// Bootstraps the library state on app launch.
   ///
-  /// If the device has been scanned before, it loads instantly from cache.
-  /// Otherwise, it performs a full initial device scan.
+  /// Always loads instantly from cache first, then performs a silent background scan
+  /// if the app has completed an initial scan before. Otherwise, performs a foreground scan.
   Future<void> init({BuildContext? context}) async {
+    // Always load cached files from storage first to show them instantly.
+    await loadFromStorage();
+    if (context != null && !context.mounted) return;
+
     final alreadyScanned = await _storage.hasScannedOnce();
     if (context != null && !context.mounted) return;
 
     if (alreadyScanned) {
-      // Fast path: load from SharedPreferences.
-      await loadFromStorage();
+      // Trigger a silent background scan to search for new/modified PDFs.
+      // Do not await, running asynchronously in background.
+      _scanDevice(context: context, silent: true);
     } else {
-      // First launch or cleared data: scan physical storage.
-      await _scanDevice(context: context);
+      // First launch or cleared data: perform full foreground scan with spinner.
+      await _scanDevice(context: context, silent: false);
     }
   }
 
@@ -74,46 +79,77 @@ class PdfLibraryController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Compares two lists of [PdfFileModel] to check if they have identical paths,
+  /// sizes, modification dates, and saved states.
+  bool _arePdfListsEqual(List<PdfFileModel> listA, List<PdfFileModel> listB) {
+    if (listA.length != listB.length) return false;
+    for (int i = 0; i < listA.length; i++) {
+      final a = listA[i];
+      final b = listB[i];
+      if (a.path != b.path ||
+          a.sizeBytes != b.sizeBytes ||
+          a.modifiedDateTime != b.modifiedDateTime ||
+          a.isFavorite != b.isFavorite ||
+          a.lastOpened != b.lastOpened) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   /// Scans the entire device storage for .pdf files.
   ///
   /// Merges existing user states (favorites/recents) into the new scan results
   /// to ensure data is not lost when the file system changes.
-  Future<void> _scanDevice({BuildContext? context}) async {
-    isLoading = true;
-    notifyListeners();
+  Future<void> _scanDevice({BuildContext? context, bool silent = false}) async {
+    if (!silent) {
+      isLoading = true;
+      notifyListeners();
+    }
     try {
       final scanned = await _repository.loadAllPdfs();
 
-      // Load saved preferences to merge into new results.
-      final saved = await _storage.loadPdfList();
-      final savedMap = {for (final f in saved) f.path: f};
+      // Load saved preferences from the current in-memory list (which has the latest session edits).
+      final currentMap = {for (final f in _allFiles) f.path: f};
 
-      _allFiles = scanned.map((f) {
-        final s = savedMap[f.path];
+      final merged = scanned.map((f) {
+        final s = currentMap[f.path];
         // If we have saved state for this path, restore it.
         return s != null ? f.withSavedState(s) : f;
       }).toList();
 
-      // Persist the merged list to cache.
-      _applySearch();
-      await _storage.savePdfList(_allFiles);
+      // Check if anything actually changed.
+      final listsEqual = _arePdfListsEqual(_allFiles, merged);
+
+      if (!listsEqual) {
+        _allFiles = merged;
+        _applySearch();
+        await _storage.savePdfList(_allFiles);
+        notifyListeners();
+      }
     } catch (_) {
-      _allFiles = [];
-      if (context != null && context.mounted) {
-        showAppSnackBar(
-          context,
-          'Could not scan PDFs. Please check storage permissions.',
-        );
+      if (!silent || _allFiles.isEmpty) {
+        _allFiles = [];
+        _applySearch();
+        notifyListeners();
+        if (context != null && context.mounted) {
+          showAppSnackBar(
+            context,
+            'Could not scan PDFs. Please check storage permissions.',
+          );
+        }
+      }
+    } finally {
+      if (!silent) {
+        isLoading = false;
+        notifyListeners();
       }
     }
-    _applySearch();
-    isLoading = false;
-    notifyListeners();
   }
 
   /// Forces a fresh scan of the device to find newly added or removed files.
   Future<void> refreshPdfs({BuildContext? context}) async {
-    await _scanDevice(context: context);
+    await _scanDevice(context: context, silent: false);
   }
 
   /// Filters the library list based on a search string.
